@@ -1,0 +1,237 @@
+"use client";
+
+import { Canvas, useThree } from "@react-three/fiber";
+import { ContactShadows, OrbitControls, useGLTF } from "@react-three/drei";
+import { EffectComposer, Bloom } from "@react-three/postprocessing";
+import { Suspense, useEffect } from "react";
+import { IoMdClose } from "react-icons/io";
+import * as THREE from "three";
+
+// =============================
+// 🚗 MODEL (Auto Center + Ground)
+// =============================
+function Model({ path, color }: { path: string; color: string }) {
+  const { scene } = useGLTF(path);
+  const { camera } = useThree();
+
+  // =============================
+  // AUTO CENTER + GROUND + CAMERA FIT
+  // =============================
+  useEffect(() => {
+    if (!(camera instanceof THREE.PerspectiveCamera)) return;
+
+    scene.position.set(0, 0, 0);
+    scene.rotation.set(0, 0, 0);
+    scene.scale.set(1, 1, 1);
+
+    // ==========================
+    // 1️⃣ SCALE NORMALIZE
+    // ==========================
+    const box = new THREE.Box3().setFromObject(scene);
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+
+    box.getSize(size);
+    box.getCenter(center);
+
+    const TARGET_LENGTH = 4.5;
+    const scaleFactor = TARGET_LENGTH / size.z;
+    scene.scale.setScalar(scaleFactor);
+
+    // ==========================
+    // 2️⃣ RECALCULATE AFTER SCALE
+    // ==========================
+    const newBox = new THREE.Box3().setFromObject(scene);
+    const newSize = new THREE.Vector3();
+    const newCenter = new THREE.Vector3();
+
+    newBox.getSize(newSize);
+    newBox.getCenter(newCenter);
+
+    // center X Z
+    scene.position.x = -newCenter.x;
+    scene.position.z = -newCenter.z;
+
+    // fix floating model
+    scene.position.y = -newBox.min.y;
+
+    // ==========================
+    // 3️⃣ FORCE FRONT TO FACE CAMERA
+    // ==========================
+    // บางไฟล์หันผิดแกน
+    if (newSize.x > newSize.z) {
+      // น่าจะหันด้านข้าง
+      scene.rotation.y = Math.PI / 2;
+    }
+
+    // ==========================
+    // 4️⃣ CAMERA FIT (FRONT VIEW DEFAULT)
+    // ==========================
+    const maxDim = Math.max(newSize.x, newSize.z);
+    const fov = camera.fov * (Math.PI / 180);
+
+    let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+    cameraZ *= 1.6;
+
+    const focusY = newSize.y * 0.45;
+
+    camera.position.set(maxDim * 0.15, focusY, cameraZ);
+    camera.lookAt(0, focusY, 0);
+  }, [scene, camera]);
+
+  // =============================
+  // CHANGE COLOR
+  // =============================
+  useEffect(() => {
+    scene.traverse((child: any) => {
+      if (child.isMesh && child.material) {
+        const matName = child.material.name?.toLowerCase() || "";
+
+        if (matName.includes("body") || matName.includes("paint")) {
+          child.material = child.material.clone();
+          child.material.color = new THREE.Color(color);
+          child.material.metalness = 0.7;
+          child.material.roughness = 0.25;
+        }
+      }
+    });
+  }, [scene, color]);
+
+  return <primitive object={scene} />;
+}
+
+// =============================
+// 🏢 STUDIO ROOM
+// =============================
+function StudioRoom() {
+  return (
+    <group>
+      {/* Large cyclorama wall */}
+      <mesh position={[0, 5, -12]}>
+        <cylinderGeometry args={[30, 30, 15, 128, 1, true]} />
+        <meshStandardMaterial
+          color="#151518"
+          side={THREE.BackSide}
+          roughness={0.6}
+        />
+      </mesh>
+
+      {/* Floor at Y=0 */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+        <planeGeometry args={[60, 60]} />
+        <meshStandardMaterial color="#1c1c20" metalness={0.3} roughness={0.4} />
+      </mesh>
+    </group>
+  );
+}
+
+// =============================
+// 🎥 MAIN VIEWER
+// =============================
+interface Props {
+  modelPath?: string;
+  color: string;
+  fullScreen?: boolean;
+  onClose?: () => void;
+}
+
+export default function CarModelViewer({
+  modelPath,
+  color,
+  fullScreen = false,
+  onClose,
+}: Props) {
+  const finalPath = modelPath || "/models/default/default.glb";
+
+  useEffect(() => {
+    if (!fullScreen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose?.();
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [fullScreen, onClose]);
+
+  return (
+    <div
+      className={
+        fullScreen
+          ? "fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center"
+          : "w-full h-[430px]"
+      }
+    >
+      <div
+        className={
+          fullScreen
+            ? "relative w-[90vw] h-[85vh] bg-black rounded-2xl shadow-2xl"
+            : "relative w-full h-full bg-black rounded-2xl shadow-md"
+        }
+      >
+        {fullScreen && (
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 bg-white/90 p-3 rounded-xl shadow hover:scale-110 transition z-50"
+          >
+            <IoMdClose size={20} />
+          </button>
+        )}
+
+        <Canvas
+          shadows
+          dpr={[1, 2]}
+          camera={{ fov: 28 }}
+          onCreated={({ gl }) => {
+            gl.toneMapping = THREE.ACESFilmicToneMapping;
+            gl.toneMappingExposure = 1; // เพิ่มจาก 1 → 1.5 หรือ 1.8
+            gl.outputColorSpace = THREE.SRGBColorSpace;
+          }}
+        >
+          <color attach="background" args={["#111114"]} />
+
+          <Suspense fallback={null}>
+            <StudioRoom />
+            <Model path={finalPath} color={color} />
+          </Suspense>
+
+          {/* Lighting */}
+          <hemisphereLight intensity={0.25} />
+
+          <directionalLight position={[6, 8, 6]} intensity={2} castShadow />
+          <directionalLight position={[-6, 4, -6]} intensity={1} />
+          <directionalLight position={[0, 6, 10]} intensity={3} castShadow />
+          <directionalLight position={[0, 8, 6]} intensity={2} />
+          <directionalLight position={[0, 5, -8]} intensity={1.2} />
+
+          <ContactShadows
+            position={[0, 0.01, 0]}
+            opacity={0.5}
+            scale={20}
+            blur={2}
+            far={20}
+          />
+
+          <OrbitControls
+            enablePan={false}
+            enableZoom
+            enableDamping
+            dampingFactor={0.05}
+            minDistance={4}
+            maxDistance={20}
+            minPolarAngle={Math.PI / 2.4}
+            maxPolarAngle={Math.PI / 2}
+          />
+
+          <EffectComposer>
+            <Bloom intensity={0.05} luminanceThreshold={0.6} />
+          </EffectComposer>
+        </Canvas>
+      </div>
+    </div>
+  );
+}
+
+
+
+benz maybach, supra, mclaren, bmw m3, fortuner, ford everest = สีไม่เปลี่ยน
+porsch 911 = จมพื้น
+LPI 800 = จมพื้น + สีไม่เปลี่ยน

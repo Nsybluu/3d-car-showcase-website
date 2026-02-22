@@ -1,0 +1,105 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import Container from "@/src/components/Main/Container";
+import { MdOutlineArrowOutward } from "react-icons/md";
+import Link from "next/link";
+
+export default function TrendingSection() {
+  const [cars, setCars] = useState<any[]>([]);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showLeftFade, setShowLeftFade] = useState(false);
+  const [showRightFade, setShowRightFade] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/trending")
+      .then((res) => res.json())
+      .then((data) => setCars(data));
+  }, []);
+
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const { scrollLeft, scrollWidth, clientWidth } = container;
+
+      setShowLeftFade(scrollLeft > 0);
+      setShowRightFade(scrollLeft + clientWidth < scrollWidth - 1);
+    };
+
+    handleScroll();
+    container.addEventListener("scroll", handleScroll);
+
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [cars]);
+
+  return (
+    <section className="pt-20">
+      <Container>
+        <h2 className="text-4xl font-semibold mb-12">Trending Models</h2>
+
+        <div className="relative">
+          <div
+            ref={scrollRef}
+            className="flex gap-6 overflow-x-auto scroll-smooth no-scrollbar"
+          >
+            {cars.map((car) => (
+              <Link
+                key={car.carId}
+                href={`/car/${car.carId}`}
+                className="min-w-[280px] h-[420px] block group"
+              >
+                <div
+                  className="
+                    bg-gray-100 rounded-2xl
+                    border border-gray-200
+                    transition duration-300
+                    hover:shadow-[0_10px_30px_rgba(0,0,0,0.10)]
+                    overflow-hidden
+                    flex flex-col"
+                >
+                  <div className="h-48 overflow-hidden">
+                    <img
+                      src={car.imageUrl}
+                      alt={car.carName}
+                      className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
+                    />
+                  </div>
+
+                  <div className="p-5 flex flex-col flex-1">
+                    <h4 className="text-lg mb-2 h-[56px] leading-tight">
+                      {car.carName} - {car.year}
+                    </h4>
+
+                    <div className="mt-auto flex justify-between items-center pt-8">
+                      <p className="text-black font-bold">
+                        {new Intl.NumberFormat("th-TH", {
+                          style: "currency",
+                          currency: "THB",
+                        }).format(car.price)}
+                      </p>
+
+                      <span className="inline-flex items-center gap-1 text-blue-600 text-xs transition-colors duration-300 group-hover:text-blue-800">
+                        View Details
+                        <MdOutlineArrowOutward className="transition-transform duration-300 group-hover:translate-x-1" />
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {showLeftFade && (
+            <div className="pointer-events-none absolute left-0 top-0 h-full w-20 bg-gradient-to-r from-gray-100 to-transparent transition-opacity duration-300" />
+          )}
+
+          {showRightFade && (
+            <div className="pointer-events-none absolute right-0 top-0 h-full w-20 bg-gradient-to-l from-gray-100 to-transparent transition-opacity duration-300" />
+          )}
+        </div>
+      </Container>
+    </section>
+  );
+}
