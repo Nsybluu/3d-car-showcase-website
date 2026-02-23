@@ -8,6 +8,8 @@ export const metadata = {
   title: "Cars | LoveCodeLoveCar",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function CarPage({
   searchParams,
 }: {
