@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 interface Props {
   colors: {
     id: number;
@@ -11,6 +13,21 @@ interface Props {
   onChange: (color: string) => void;
 }
 
+function ColorImage({ src, alt }: { src: string; alt: string }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div className="relative w-full h-full">
+      {!loaded && <div className="absolute inset-0 skeleton" />}
+      <img
+        src={src}
+        alt={alt}
+        className={`w-full h-full object-cover transition duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
+        onLoad={() => setLoaded(true)}
+      />
+    </div>
+  );
+}
+
 export default function CarColorSelect({ colors, selected, onChange }: Props) {
   return (
     <div className="grid grid-cols-3 gap-4">
@@ -19,24 +36,43 @@ export default function CarColorSelect({ colors, selected, onChange }: Props) {
         <button
           key={c.id}
           onClick={() => onChange(c.code)}
-          className={`rounded-lg overflow-hidden border-2 transition
-            ${selected === c.code ? "border-black scale-105" : "border-gray-200"}
+          className={`group relative rounded-xl overflow-hidden border-2 transition-all duration-300
+            ${
+              selected === c.code
+                ? "border-black scale-[1.03] shadow-lg"
+                : "border-gray-200 hover:border-gray-400 hover:shadow-md"
+            }
           `}
         >
-          <img
-            src={c.image}
-            alt={c.name}
-            className="w-full h-24 object-cover"
-          />
+          <div className="h-24">
+            <ColorImage src={c.image} alt={c.name} />
+          </div>
+          <div
+            className={`absolute bottom-0 inset-x-0 px-2 py-1.5 text-xs font-medium text-center transition-all duration-300
+            ${
+              selected === c.code
+                ? "bg-black text-white"
+                : "bg-black/50 text-white/90 backdrop-blur-sm translate-y-full group-hover:translate-y-0"
+            }
+          `}
+          >
+            {c.name}
+          </div>
         </button>
       ))}
 
       {/* 🌈 Custom */}
-      <div className="relative w-full h-24">
-        <div
-          className="absolute inset-0 rounded-lg border-2 border-gray-200
-                     bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500"
-        />
+      <div className="relative rounded-xl overflow-hidden border-2 border-gray-200 hover:border-gray-400 transition-all duration-300 hover:shadow-md">
+        <div className="h-24">
+          <ColorImage src="/images/colors/rainbow.png" alt="Custom Color" />
+        </div>
+
+        <div className="absolute bottom-0 inset-x-0 px-2 py-1.5 bg-black/50 backdrop-blur-sm">
+          <p className="text-xs font-medium text-white/90 text-center">
+            Custom
+          </p>
+        </div>
+
         <input
           type="color"
           onChange={(e) => onChange(e.target.value)}

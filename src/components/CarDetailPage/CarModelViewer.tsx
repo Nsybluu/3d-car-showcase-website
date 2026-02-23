@@ -1,62 +1,244 @@
 "use client";
 
 import { Canvas, useThree } from "@react-three/fiber";
-import { ContactShadows, OrbitControls, useGLTF } from "@react-three/drei";
+import { ContactShadows, Environment, OrbitControls, useGLTF } from "@react-three/drei";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import { Suspense, useEffect } from "react";
 import { IoMdClose } from "react-icons/io";
 import * as THREE from "three";
+import * as React from "react";
+
+// ===============================
+// Per-model body material names (lowercase)
+// ===============================
+const MODEL_BODY_MATERIALS: Record<string, string[]> = {
+  "720spider": ["car_paint"],
+  "aston_martin_db11": ["amdb11"],
+  "carrera4s": ["paint"],
+  "cls53": ["body"],
+  "default": ["wire_006134113"],
+  "g63": ["bodypaint"],
+  "fordeverest": ["carpaint"],
+  "lpi800": ["material.008", "material.004", "material.009", "material.012", "material.042"],
+  "m3touring81": [
+    "m3g81law_coloured_gloss",
+    "m3g81law",
+  ],
+  "m4": ["m4car_body1", "m4car_hood1", "m4car_bodykit1"],
+  "maybach": ["car_paint", "car_paint.001", "car_paint_with_flakes"],
+  "nissancab2021": ["carpaint"],
+  "r34": ["material.001"],
+  "r35": ["r35_paint"],
+  "supra": ["body.012"],
+  "toyotafortuner": ["carpaint"],
+  "typer": [
+    "honda_civictyperewardrecycled_2023paint_material",
+  ],
+};
+
+// Mesh node names to EXCLUDE from color change (lowercase substrings)
+const MODEL_MESH_EXCLUDES: Record<string, string[]> = {
+  "m3touring81": ["grille", "intercooler", "exh_tip", "diffuser", "headlight"],
+};
+
+function getModelKey(path: string): string | null {
+  const lower = path.toLowerCase();
+  for (const key of Object.keys(MODEL_BODY_MATERIALS)) {
+    if (lower.includes(key)) return key;
+  }
+  return null;
+}
+
+function isBodyMaterialHeuristic(matName: string): boolean {
+  const name = matName.toLowerCase();
+  return (
+    name.includes("carpaint") ||
+    name.includes("car_paint") ||
+    name.includes("bodypaint") ||
+    name.includes("body_paint") ||
+    (name.includes("paint") &&
+      !name.includes("interior") &&
+      !name.includes("plastic") &&
+      !name.includes("urus") &&
+      !name.includes("generic")) ||
+    (name.includes("coloured") &&
+      !name.includes("interior"))
+  );
+}
+
+function isBodyMaterial(matName: string, path: string, forceHeuristic = false): boolean {
+  const name = matName.toLowerCase();
+
+  if (!forceHeuristic) {
+    const key = getModelKey(path);
+    // per-model: exact match or .001/.002 suffix (Three.js renames duplicates)
+    if (key) {
+      const list = MODEL_BODY_MATERIALS[key];
+      return list.some((m) => name === m || name.startsWith(m + "."));
+    }
+  }
+
+  // fallback heuristic
+  return isBodyMaterialHeuristic(name);
+}
+
+// Compute bounding box from mesh geometry only (ignores helpers, lines, etc.)
+function getMeshBounds(object: THREE.Object3D): THREE.Box3 {
+  const box = new THREE.Box3();
+  object.updateMatrixWorld(true);
+  object.traverse((child: any) => {
+    if (child.isMesh && child.geometry && child.geometry.attributes.position) {
+      const geom = child.geometry;
+      geom.computeBoundingBox();
+      if (geom.boundingBox) {
+        const b = geom.boundingBox.clone();
+        b.applyMatrix4(child.matrixWorld);
+        box.union(b);
+      }
+    }
+  });
+  return box;
+}
 
 function Model({ path, color }: { path: string; color: string }) {
   const { scene } = useGLTF(path);
 
-  useEffect(() => {
-    // ===== 1. RESET =====
-    scene.position.set(0, 0, 0);
-    scene.rotation.set(0, 0, 0);
-    scene.scale.set(1, 1, 1);
+  const model = React.useMemo(() => {
+    if (!scene) return null;
 
-    // ===== 2. CENTER MODEL =====
-    const box = new THREE.Box3().setFromObject(scene);
+    const clone = scene.clone(true);
+
+    clone.updateMatrixWorld(true);
+
+    // ===============================
+    // 1️⃣ FIX AXIS (บางไฟล์ Z ขึ้น)
+    // ===============================
+    let box = getMeshBounds(clone);
     const size = new THREE.Vector3();
     const center = new THREE.Vector3();
 
     box.getSize(size);
+
+    if (size.y > size.x && size.y > size.z) {
+      clone.rotation.x = -Math.PI / 2;
+      clone.updateMatrixWorld(true);
+      box = getMeshBounds(clone);
+      box.getSize(size);
+    }
+
+    // ===============================
+    // 2️⃣ SCALE ให้ความยาวเท่ากัน
+    // ===============================
+    const targetLength = 3.8;
+    const longestHorizontal = Math.max(size.x, size.z);
+    const scaleFactor = targetLength / longestHorizontal;
+    clone.scale.setScalar(scaleFactor);
+
+    clone.updateMatrixWorld(true);
+    box = getMeshBounds(clone);
+    box.getSize(size);
     box.getCenter(center);
 
-    scene.position.x -= center.x;
-    scene.position.z -= center.z;
-    scene.position.y -= box.min.y; // ground
+    // ===============================
+    // 3️⃣ CENTER (X + Z)
+    // ===============================
+    clone.position.x -= center.x;
+    clone.position.z -= center.z;
 
-    // ===== 3. UNIFORM SCALE =====
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const targetSize = 4; // ความใหญ่รถที่ต้องการ
-    const scale = targetSize / maxDim;
-    scene.scale.setScalar(scale);
+    // ===============================
+    // 4️⃣ SUV / กระบะ ใหญ่ขึ้นนิด
+    // ===============================
+    const lower = path.toLowerCase();
+    if (
+      lower.includes("fortuner") ||
+      lower.includes("everest") ||
+      lower.includes("g63") ||
+      lower.includes("nissancab")
+    ) {
+      clone.scale.multiplyScalar(1.1);
+    }
 
-    // ===== 4. FORCE FACE CAMERA =====
-    scene.rotation.y = Math.PI;
+    // ===============================
+    // 5️⃣ FINAL GROUNDING - reset Y then compute
+    // ===============================
+    clone.position.set(0, 0, 0);
+    clone.updateMatrixWorld(true);
+    box = new THREE.Box3().setFromObject(clone);
+    const groundCenter = new THREE.Vector3();
+    box.getCenter(groundCenter);
+    clone.position.x = -groundCenter.x;
+    clone.position.z = -groundCenter.z;
+    clone.position.y = -box.min.y;
 
-    // ===== 5. COLOR SYSTEM =====
-    scene.traverse((child: any) => {
-      if (!child.isMesh) return;
-      if (!(child.material instanceof THREE.MeshStandardMaterial)) return;
+    return clone;
+  }, [scene, path]);
 
-      const mat = child.material.clone();
+  // ===============================
+  // 🎨 เปลี่ยนสี
+  // ===============================
+  React.useEffect(() => {
+    if (!model) return;
 
-      // ถ้ามี texture ให้ลบ
-      mat.map = null;
-
-      mat.color.set(color);
-      mat.metalness = 0.8;
-      mat.roughness = 0.3;
-      mat.needsUpdate = true;
-
-      child.material = mat;
+    // Debug: log all mesh material names for this model
+    const debugNames: string[] = [];
+    model.traverse((c: any) => {
+      if (c.isMesh && c.material?.name) debugNames.push(c.material.name);
     });
-  }, [scene, color]);
+    console.log('[CarViewer]', path, '[materials]', [...new Set(debugNames)]);
 
-  return <primitive object={scene} />;
+    const applyColor = (child: any) => {
+      const mat = child.material;
+      child.material = mat.clone();
+      child.material.color = new THREE.Color(color);
+      child.material.map = null;
+      child.material.emissiveMap = null;
+      child.material.aoMap = null;
+      if ('metalness' in child.material) child.material.metalness = 0.4;
+      if ('roughness' in child.material) child.material.roughness = 0.25;
+      if ('clearcoat' in child.material) child.material.clearcoat = 0.8;
+      if ('clearcoatRoughness' in child.material) child.material.clearcoatRoughness = 0.1;
+      child.material.needsUpdate = true;
+    };
+
+    // Pass 1: per-model exact matching
+    let changed = 0;
+    model.traverse((child: any) => {
+      if (!child.isMesh) return;
+      const mat = child.material;
+      if (!mat || !mat.name) return;
+      if (isBodyMaterial(mat.name, path)) {
+        // Check mesh-name exclusion
+        const meshKey = getModelKey(path);
+        const excludes = meshKey ? MODEL_MESH_EXCLUDES[meshKey] : null;
+        if (excludes) {
+          const nodeName = (child.name || '').toLowerCase();
+          if (excludes.some((ex) => nodeName.includes(ex))) return;
+        }
+        applyColor(child);
+        changed++;
+      }
+    });
+
+    // Pass 2: if per-model matching found NOTHING, fall back to heuristic
+    if (changed === 0) {
+      console.warn('[CarViewer]', path, 'no per-model match, trying heuristic');
+      model.traverse((child: any) => {
+        if (!child.isMesh) return;
+        const mat = child.material;
+        if (!mat || !mat.name) return;
+        if (isBodyMaterial(mat.name, path, true)) {
+          applyColor(child);
+          changed++;
+        }
+      });
+    }
+
+    console.log('[CarViewer]', path, 'changed', changed, 'meshes');
+  }, [model, color, path]);
+
+  if (!model) return null;
+
+  return <primitive object={model} />;
 }
 
 // =============================
@@ -69,18 +251,63 @@ function StudioRoom() {
       <mesh position={[0, 5, -12]}>
         <cylinderGeometry args={[30, 30, 15, 128, 1, true]} />
         <meshStandardMaterial
-          color="#151518"
+          color="#1a1a1f"
           side={THREE.BackSide}
-          roughness={0.6}
+          roughness={0.9}
         />
       </mesh>
 
       {/* Floor at Y=0 */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
         <planeGeometry args={[60, 60]} />
-        <meshStandardMaterial color="#1c1c20" metalness={0.3} roughness={0.4} />
+        <meshStandardMaterial color="#18181c" metalness={0.6} roughness={0.3} />
       </mesh>
     </group>
+  );
+}
+
+// =============================
+// ⏳ LOADING OVERLAY
+// =============================
+function ModelLoader({ path }: { path: string }) {
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    setLoading(true);
+    const check = setInterval(() => {
+      try {
+        useGLTF.preload(path);
+        const cached = THREE.Cache.get(path);
+        if (cached) {
+          setLoading(false);
+          clearInterval(check);
+        }
+      } catch {
+        // still loading
+      }
+    }, 200);
+
+    const timeout = setTimeout(() => {
+      setLoading(false);
+      clearInterval(check);
+    }, 15000);
+
+    return () => {
+      clearInterval(check);
+      clearTimeout(timeout);
+    };
+  }, [path]);
+
+  if (!loading) return null;
+
+  return (
+    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#111115] rounded-2xl">
+      <div className="relative w-16 h-16 mb-4">
+        <div className="absolute inset-0 rounded-full border-2 border-white/10" />
+        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-white/80 spinner-ring" />
+      </div>
+      <p className="text-white/50 text-sm font-medium tracking-wide">Loading 3D Model...</p>
+    </div>
   );
 }
 
@@ -100,7 +327,7 @@ export default function CarModelViewer({
   fullScreen = false,
   onClose,
 }: Props) {
-  const finalPath = modelPath || "/models/default/default.glb";
+  const finalPath = modelPath || "https://pub-6c082fd2916247f384ce18d4075bfb85.r2.dev/defaultCar.glb";
 
   useEffect(() => {
     if (!fullScreen) return;
@@ -116,14 +343,14 @@ export default function CarModelViewer({
       className={
         fullScreen
           ? "fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center"
-          : "w-full h-[430px]"
+          : "w-full h-full bg-[#111115] rounded-2xl overflow-hidden"
       }
     >
       <div
         className={
           fullScreen
-            ? "relative w-[90vw] h-[85vh] bg-black rounded-2xl shadow-2xl"
-            : "relative w-full h-full bg-black rounded-2xl shadow-md"
+            ? "relative w-[90vw] h-[85vh] bg-[#111115] rounded-2xl shadow-2xl overflow-hidden"
+            : "relative w-full h-full"
         }
       >
         {fullScreen && (
@@ -135,26 +362,46 @@ export default function CarModelViewer({
           </button>
         )}
 
-        <Canvas camera={{ position: [0, 2, 8], fov: 30 }}>
-          <color attach="background" args={["#111114"]} />
+        {/* Loading overlay */}
+        <ModelLoader path={finalPath} />
+
+        <Canvas camera={{ position: [4.5, 1.8, 5], fov: 32 }}>
+          <color attach="background" args={["#111115"]} />
 
           <Suspense fallback={null}>
             <StudioRoom />
             <Model path={finalPath} color={color} />
           </Suspense>
 
-          {/* Lighting */}
-          <hemisphereLight intensity={0.25} />
+          {/* Environment for realistic reflections */}
+          <Environment preset="warehouse" />
 
-          <directionalLight position={[6, 8, 6]} intensity={2} castShadow />
-          <directionalLight position={[-6, 4, -6]} intensity={1} />
-          <directionalLight position={[0, 6, 10]} intensity={3} castShadow />
-          <directionalLight position={[0, 8, 6]} intensity={2} />
-          <directionalLight position={[0, 5, -8]} intensity={1.2} />
+          {/* Lighting - Showroom style */}
+          <ambientLight intensity={0.15} />
+
+          {/* Key light - strong from front-top */}
+          <spotLight
+            position={[5, 8, 5]}
+            intensity={80}
+            angle={0.5}
+            penumbra={0.8}
+            castShadow
+          />
+          {/* Fill light - softer from left */}
+          <directionalLight position={[-5, 4, 2]} intensity={0.8} />
+          {/* Rim light - behind for car outline */}
+          <spotLight
+            position={[0, 5, -8]}
+            intensity={40}
+            angle={0.6}
+            penumbra={1}
+          />
+          {/* Subtle top light */}
+          <directionalLight position={[0, 10, 0]} intensity={0.5} />
 
           <ContactShadows
             position={[0, 0.01, 0]}
-            opacity={0.5}
+            opacity={0.6}
             scale={20}
             blur={2}
             far={20}
@@ -162,11 +409,11 @@ export default function CarModelViewer({
 
           <OrbitControls
             enablePan={false}
-            enableZoom
-            minDistance={6}
-            maxDistance={12}
-            minPolarAngle={Math.PI / 2.4}
-            maxPolarAngle={Math.PI / 2}
+            target={[0, 0.7, 0]}
+            minDistance={5}
+            maxDistance={10}
+            minPolarAngle={Math.PI / 6}
+            maxPolarAngle={Math.PI / 2.15}
           />
 
           <EffectComposer>

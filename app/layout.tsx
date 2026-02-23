@@ -9,7 +9,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-gray-100">
+      <body className="bg-gray-100 antialiased" style={{ fontFamily: "var(--font-sans)" }}>
         <Navbar />
         {children}
         <Footer />

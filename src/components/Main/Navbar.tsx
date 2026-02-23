@@ -29,7 +29,12 @@ export default function Navbar() {
 
   return (
     <nav className="fixed top-6 left-0 w-full flex justify-center z-50">
-      <div className="flex gap-12 px-20 py-4 rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 shadow-lg relative">
+      <motion.div
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="flex gap-12 px-20 py-4 rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 shadow-lg relative"
+      >
         {navItems.map((item) => {
           const active = pathname === item.href;
 
@@ -38,9 +43,9 @@ export default function Navbar() {
               key={item.name}
               onClick={() => handleNavigate(item.href)}
               className={`
-                relative text-lg font-medium px-1
+                relative text-md font-semibold px-2 py-1 tracking-wide uppercase
                 transition-colors duration-300
-                ${active ? "text-black" : "text-black/70 hover:text-black/20"}
+                ${active ? "text-black" : "text-black/40 hover:text-black"}
               `}
             >
               {item.name}
@@ -48,7 +53,7 @@ export default function Navbar() {
               {active && (
                 <motion.div
                   layoutId="navbar-underline"
-                  className="absolute left-0 -bottom-1 h-[2px] w-full bg-black"
+                  className="absolute left-0 -bottom-0.5 h-[2px] w-full bg-black rounded-full"
                   transition={{
                     type: "spring",
                     stiffness: 500,
@@ -59,7 +64,7 @@ export default function Navbar() {
             </button>
           );
         })}
-      </div>
+      </motion.div>
     </nav>
   );
 }

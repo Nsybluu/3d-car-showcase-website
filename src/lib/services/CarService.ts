@@ -72,12 +72,12 @@ export class CarService {
 
     // 🚨 ถ้าไม่มี model ใน DB
     if (!rows || rows.length === 0) {
-      return "/models/default/default.glb";
+      return "https://pub-6c082fd2916247f384ce18d4075bfb85.r2.dev/defaultCar.glb";
     }
 
     // 🚨 ถ้า modelUrl ว่าง
     if (!rows[0].modelUrl) {
-      return "/models/default/default.glb";
+      return "https://pub-6c082fd2916247f384ce18d4075bfb85.r2.dev/defaultCar.glb";
     }
 
     return rows[0].modelUrl;

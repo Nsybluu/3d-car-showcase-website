@@ -4,6 +4,10 @@ import BrandSection from "@/src/components/HomePage/BrandSection";
 import CarContainer from "@/src/components/CarPage/CarContainer";
 import { CarService } from "@/src/lib/services/CarService";
 
+export const metadata = {
+  title: "Cars | LoveCodeLoveCar",
+};
+
 export default async function CarPage({
   searchParams,
 }: {
