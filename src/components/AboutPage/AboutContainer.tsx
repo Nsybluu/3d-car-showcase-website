@@ -1,7 +1,7 @@
 "use client";
 
 import Container from "../Main/Container";
-
+import { useState } from "react";
 import Image from "next/image";
 import { FaReact } from "react-icons/fa";
 import {
@@ -62,17 +62,29 @@ function GlassCard({
 }
 
 export default function AboutContainer() {
+  const [loaded, setLoaded] = useState(false);
+
   return (
     <Container>
       <section className="relative w-full min-h-screen overflow-hidden rounded-3xl">
         {/* Background Image */}
-        <Image
-          src="/images/AboutImg.png"
-          alt="About Background"
-          fill
-          priority
-          className="object-cover"
-        />
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          {!loaded && <div className="absolute inset-0 skeleton" />}
+
+          <Image
+            src="/images/AboutImg.png"
+            alt="About Background"
+            fill
+            priority
+            onLoadingComplete={() => setLoaded(true)}
+            className={`
+              object-cover
+              transition duration-700
+              ${loaded ? "opacity-100" : "opacity-0"}
+            `}
+          />
+        </div>
 
         {/* Overlay (ช่วยให้ text อ่านง่ายขึ้น) */}
         <div className="absolute inset-0 bg-black/30" />

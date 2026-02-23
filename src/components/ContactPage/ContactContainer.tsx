@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 import { FaGithub, FaGoogle, FaFacebookF, FaInstagram } from "react-icons/fa";
 
 function GlassCard({
@@ -61,16 +62,28 @@ function SocialIcon({
 }
 
 export default function ContactContainer() {
+
+  const [loaded, setLoaded] = useState(false);
+  
   return (
     <section className="relative w-[843px] h-[1499px] overflow-hidden rounded-3xl mx-auto flex flex-col">
       {/* Background Image */}
-      <Image
-        src="/images/ContactImg.png"
-        alt="Contact Background"
-        fill
-        priority
-        className="object-cover"
-      />
+      <div className="absolute inset-0">
+        {!loaded && <div className="absolute inset-0 skeleton" />}
+
+        <Image
+          src="/images/ContactImg.png"
+          alt="Contact Background"
+          fill
+          priority
+          onLoadingComplete={() => setLoaded(true)}
+          className={`
+      object-cover
+      transition duration-700
+      ${loaded ? "opacity-100" : "opacity-0"}
+    `}
+        />
+      </div>
 
       {/* Overlay */}
       <div className="absolute inset-0 bg-black/30" />

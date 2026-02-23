@@ -32,6 +32,8 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function CarDetailPage({ params }: Props) {
   const { id } = await params;   // ✅ ต้อง await
 
