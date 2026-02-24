@@ -3,6 +3,7 @@ import CarDetailHeader from "@/src/components/CarDetailPage/CarDetailHeader";
 import CarDetailContainer from "@/src/components/CarDetailPage/CarDetailContainer";
 
 import { Metadata } from "next";
+import { RowDataPacket } from "mysql2";
 import { db } from "@/src/lib/db";
 
 async function getCar(id: string) {
