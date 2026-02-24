@@ -37,8 +37,8 @@ export class CarService {
 
     return rows.map((row: any) => ({
       carId: row.carId,
-      brandId: row.brandId,       
-      categoryId: row.categoryId,  
+      brandId: row.brandId,
+      categoryId: row.categoryId,
       carName: row.carName,
       year: row.year,
       price: row.price,
@@ -101,30 +101,47 @@ export class CarService {
 
   // ดึงสเปครถตาม carId
   static async getSpecsByCarId(carId: number) {
-    const [sections]: any[] = await db.query(
-      "SELECT * FROM car_spec_section WHERE carId = ? ORDER BY displayOrder ASC",
-      [carId],
-    );
+  const [rows]: any[] = await db.query(
+    `
+    SELECT 
+      s.sectionId,
+      s.sectionTitle,
+      s.displayOrder AS sectionOrder,
+      i.itemId,
+      i.label,
+      i.value,
+      i.displayOrder AS itemOrder
+    FROM car_spec_section s
+    LEFT JOIN car_spec_item i
+      ON s.sectionId = i.sectionId
+    WHERE s.carId = ?
+    ORDER BY s.displayOrder ASC, i.displayOrder ASC
+    `,
+    [carId]
+  );
 
-    if (!sections.length) return [];
+  if (!rows.length) return [];
 
-    const result = [];
+  const sectionsMap: any = {};
 
-    for (const section of sections) {
-      const [items]: any[] = await db.query(
-        "SELECT * FROM car_spec_item WHERE sectionId = ? ORDER BY displayOrder ASC",
-        [section.sectionId],
-      );
-
-      result.push({
-        sectionId: section.sectionId,
-        title: section.sectionTitle,
-        items,
-      });
+  for (const row of rows) {
+    if (!sectionsMap[row.sectionId]) {
+      sectionsMap[row.sectionId] = {
+        sectionId: row.sectionId,
+        title: row.sectionTitle,
+        items: [],
+      };
     }
 
-    return result;
-
-    
+    if (row.itemId) {
+      sectionsMap[row.sectionId].items.push({
+        itemId: row.itemId,
+        label: row.label,
+        value: row.value,
+      });
+    }
   }
+
+  return Object.values(sectionsMap);
+}
 }
