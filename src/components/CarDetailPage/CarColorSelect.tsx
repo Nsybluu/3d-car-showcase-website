@@ -64,7 +64,7 @@ export default function CarColorSelect({ colors, selected, onChange }: Props) {
       {/* 🌈 Custom */}
       <div className="relative rounded-xl overflow-hidden border-2 border-gray-200 hover:border-gray-400 transition-all duration-300 hover:shadow-md">
         <div className="h-24">
-          <ColorImage src="/images/colors/rainbow.png" alt="Custom Color" />
+          <ColorImage src="https://pub-e9ea266beeb9463ca5d6f4f6b211dc6e.r2.dev/colors/rainbow.png" alt="Custom Color" />
         </div>
 
         <div className="absolute bottom-0 inset-x-0 px-2 py-1.5 bg-black/50 backdrop-blur-sm">

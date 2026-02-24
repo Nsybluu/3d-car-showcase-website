@@ -7,6 +7,7 @@ import { Suspense, useEffect } from "react";
 import { IoMdClose } from "react-icons/io";
 import * as THREE from "three";
 import * as React from "react";
+import { useProgress } from "@react-three/drei";
 
 // ===============================
 // Per-model body material names (lowercase)
@@ -266,47 +267,20 @@ function StudioRoom() {
   );
 }
 
-// =============================
-// ⏳ LOADING OVERLAY
-// =============================
-function ModelLoader({ path }: { path: string }) {
-  const [loading, setLoading] = React.useState(true);
+function LoaderOverlay() {
+  const { active, progress } = useProgress();
 
-  React.useEffect(() => {
-    setLoading(true);
-    const check = setInterval(() => {
-      try {
-        useGLTF.preload(path);
-        const cached = THREE.Cache.get(path);
-        if (cached) {
-          setLoading(false);
-          clearInterval(check);
-        }
-      } catch {
-        // still loading
-      }
-    }, 200);
-
-    const timeout = setTimeout(() => {
-      setLoading(false);
-      clearInterval(check);
-    }, 15000);
-
-    return () => {
-      clearInterval(check);
-      clearTimeout(timeout);
-    };
-  }, [path]);
-
-  if (!loading) return null;
+  if (!active) return null;
 
   return (
-    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#111115] rounded-2xl">
+    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-[#111115] rounded-2xl">
       <div className="relative w-16 h-16 mb-4">
         <div className="absolute inset-0 rounded-full border-2 border-white/10" />
-        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-white/80 spinner-ring" />
+        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-white/80 animate-spin" />
       </div>
-      <p className="text-white/50 text-sm font-medium tracking-wide">Loading 3D Model...</p>
+      <p className="text-white/50 text-sm font-medium tracking-wide">
+        Loading 3D Model... {Math.floor(progress)}%
+      </p>
     </div>
   );
 }
@@ -361,9 +335,6 @@ export default function CarModelViewer({
             <IoMdClose size={20} />
           </button>
         )}
-
-        {/* Loading overlay */}
-        <ModelLoader path={finalPath} />
 
         <Canvas camera={{ position: [4.5, 1.8, 5], fov: 32 }}>
           <color attach="background" args={["#111115"]} />
@@ -420,6 +391,7 @@ export default function CarModelViewer({
             <Bloom intensity={0.05} luminanceThreshold={0.6} />
           </EffectComposer>
         </Canvas>
+        <LoaderOverlay />
       </div>
     </div>
   );

@@ -73,7 +73,7 @@ export default function AboutContainer() {
           {!loaded && <div className="absolute inset-0 skeleton" />}
 
           <Image
-            src="/images/AboutImg.png"
+            src="https://pub-e9ea266beeb9463ca5d6f4f6b211dc6e.r2.dev/main/AboutImg.png"
             alt="About Background"
             fill
             priority

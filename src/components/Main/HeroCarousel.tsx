@@ -5,19 +5,19 @@ import Image from "next/image";
 
 const slides = [
   {
-    image: "/images/carousel/carousel1.png",
+    image: "https://pub-e9ea266beeb9463ca5d6f4f6b211dc6e.r2.dev/main/carousel1.png",
   },
   {
-    image: "/images/carousel/carousel2.png",
+    image: "https://pub-e9ea266beeb9463ca5d6f4f6b211dc6e.r2.dev/main/carousel2.png",
   },
   {
-    image: "/images/carousel/carousel3.png",
+    image: "https://pub-e9ea266beeb9463ca5d6f4f6b211dc6e.r2.dev/main/carousel3.png",
   },
   {
-    image: "/images/carousel/carousel4.png",
+    image: "https://pub-e9ea266beeb9463ca5d6f4f6b211dc6e.r2.dev/main/carousel4.png",
   },
   {
-    image: "/images/carousel/carousel5.png",
+    image: "https://pub-e9ea266beeb9463ca5d6f4f6b211dc6e.r2.dev/main/carousel5.png",
   },
 ];
 
@@ -63,7 +63,7 @@ export default function HeroCarousel() {
       {/* Logo - center */}
       <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
         <Image
-          src="/images/Logo.png"
+          src="https://pub-e9ea266beeb9463ca5d6f4f6b211dc6e.r2.dev/main/Logo.png"
           alt="LoveCodeLoveCar"
           width={300}
           height={300}

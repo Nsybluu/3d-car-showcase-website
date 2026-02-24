@@ -72,7 +72,7 @@ export default function ContactContainer() {
         {!loaded && <div className="absolute inset-0 skeleton" />}
 
         <Image
-          src="/images/ContactImg.png"
+          src="https://pub-e9ea266beeb9463ca5d6f4f6b211dc6e.r2.dev/main/ContactImg.png"
           alt="Contact Background"
           fill
           priority
