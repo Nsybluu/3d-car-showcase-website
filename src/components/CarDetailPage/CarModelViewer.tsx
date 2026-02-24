@@ -329,8 +329,9 @@ export default function CarModelViewer({
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [fullScreen, onClose]);
-
+  
   return (
+    
   <AnimatePresence>
     {fullScreen && (
       <motion.div
@@ -347,7 +348,7 @@ export default function CarModelViewer({
       className={
         fullScreen
           ? "fixed inset-0 z-50 flex items-center justify-center"
-          : "relative w-full"
+          : "relative w-full h-full"
       }
     >
       <motion.div
@@ -364,7 +365,7 @@ export default function CarModelViewer({
         className="relative bg-[#111115] rounded-2xl shadow-2xl overflow-hidden"
         style={{
           width: fullScreen ? "90vw" : "100%",
-          height: fullScreen ? "85vh" : "430px",
+          height: fullScreen ? "85vh" : "100%",
         }}
       >
         {fullScreen && (
