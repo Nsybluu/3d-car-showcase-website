@@ -30,13 +30,13 @@ export default function CarDetailContainer({
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-12">
-      <div className="grid lg:grid-cols-[800px_2fr] grid-cols-1 gap-12">
+      <div className="grid lg:grid-cols-[7fr_3fr] grid-cols-1 gap-12 items-stretch">
         {/* LEFT - MODEL */}
         <motion.div
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="relative rounded-2xl overflow-hidden shadow-md"
+          className="relative rounded-2xl overflow-hidden shadow-md min-h-[400px]"
         >
           <CarModelViewer
             modelPath={modelPath}

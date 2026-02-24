@@ -161,7 +161,7 @@ export default function CarContainer({
           {currentPage > 1 && (
             <button
               onClick={() => setCurrentPage((p) => p - 1)}
-              className="w-9 h-9 rounded-full flex items-center justify-center border-gray-200 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.10)]"
+              className="w-9 h-9 rounded-full flex items-center justify-center border border-gray-200 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.10)] hover:bg-gray-200"
             >
               <IoIosArrowBack size={18} />
             </button>
@@ -180,7 +180,7 @@ export default function CarContainer({
                 className={`w-9 h-9 rounded-full border border-gray-200 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.10)] ${
                   currentPage === item
                     ? "bg-gray-200 border border-gray-400 shadow-md"
-                    : "hover:bg-gray-100 text-gray-700"
+                    : "hover:bg-gray-200"
                 }`}
               >
                 {item}
@@ -192,7 +192,7 @@ export default function CarContainer({
           {currentPage < totalPages && (
             <button
               onClick={() => setCurrentPage((p) => p + 1)}
-              className="w-9 h-9 rounded-full flex items-center justify-center transition border border-gray-200 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.10)]"
+              className="w-9 h-9 rounded-full flex items-center justify-center transition border border-gray-200 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.10)] hover:bg-gray-200"
             >
               <IoIosArrowForward size={18} />
             </button>

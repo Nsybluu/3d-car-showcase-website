@@ -285,20 +285,28 @@ function LoaderOverlay() {
   );
 }
 
-function ResizeFix({ trigger }: { trigger: boolean }) {
-  const { camera, gl, size } = useThree();
+function ResizeFix() {
+  const { gl, camera } = useThree();
 
   React.useEffect(() => {
-    const timeout = setTimeout(() => {
-      const perspectiveCamera = camera as THREE.PerspectiveCamera;
+    const canvas = gl.domElement;
+    const parent = canvas.parentElement;
+    if (!parent) return;
 
-      perspectiveCamera.aspect = size.width / size.height;
-      perspectiveCamera.updateProjectionMatrix();
-      gl.setSize(size.width, size.height);
-    }, 100);
+    const syncSize = () => {
+      const rect = parent.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        gl.setSize(rect.width, rect.height, false);
+        const cam = camera as THREE.PerspectiveCamera;
+        cam.aspect = rect.width / rect.height;
+        cam.updateProjectionMatrix();
+      }
+    };
 
-    return () => clearTimeout(timeout);
-  }, [trigger, size, camera, gl]);
+    const observer = new ResizeObserver(syncSize);
+    observer.observe(parent);
+    return () => observer.disconnect();
+  }, [gl, camera]);
 
   return null;
 }
@@ -333,58 +341,15 @@ export default function CarModelViewer({
   return (
     
   <AnimatePresence>
-    {fullScreen && (
-      <motion.div
-        key="overlay"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.5 }}
-        className="fixed inset-0 bg-black/70 backdrop-blur-md z-40"
-      />
-    )}
-
-    <motion.div
-      className={
-        fullScreen
-          ? "fixed inset-0 z-50 flex items-center justify-center"
-          : "relative w-full h-full"
-      }
-    >
-      <motion.div
-        initial={false}
-        animate={{
-          scale: fullScreen ? 1 : 1,
-          y: fullScreen ? 0 : 0,
-        }}
-        transition={{
-          type: "spring",
-          stiffness: 120,
-          damping: 18,
-        }}
-        className="relative bg-[#111115] rounded-2xl shadow-2xl overflow-hidden"
-        style={{
-          width: fullScreen ? "90vw" : "100%",
-          height: fullScreen ? "85vh" : "100%",
-        }}
-      >
-        {fullScreen && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            onClick={onClose}
-            className="absolute top-4 right-4 bg-white/90 p-3 rounded-xl shadow hover:scale-110 transition z-50"
-          >
-            <IoMdClose size={20} />
-          </motion.button>
-        )}
-
+    {/* Normal mode: absolute fills parent grid cell exactly */}
+    {!fullScreen && (
+      <div className="absolute inset-0">
+        <div className="relative w-full h-full bg-[#111115] rounded-2xl shadow-2xl overflow-hidden">
         <Canvas 
           frameloop="always"
           dpr={[1, 1.5]}
-          camera={{ position: [4.5, 1.8, 5], fov: 32 }}>
+          camera={{ position: [4.5, 1.8, 5], fov: 32 }}
+          resize={{ debounce: 0 }}>
           <color attach="background" args={["#111115"]} />
 
           <Suspense fallback={null}>
@@ -410,14 +375,83 @@ export default function CarModelViewer({
             maxPolarAngle={Math.PI / 2.15}
           />
 
+          <ResizeFix />
+
           <EffectComposer>
             <Bloom intensity={0.05} luminanceThreshold={0.6} />
           </EffectComposer>
         </Canvas>
 
         <LoaderOverlay />
+        </div>
+      </div>
+    )}
+
+    {/* Fullscreen mode: fixed overlay, completely separate container */}
+    {fullScreen && (
+      <motion.div
+        key="fs-overlay"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3 }}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md"
+      >
+        <div
+          className="relative bg-[#111115] rounded-2xl shadow-2xl overflow-hidden"
+          style={{ width: "90vw", height: "85vh" }}
+        >
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.25 }}
+            onClick={onClose}
+            className="absolute top-4 right-4 bg-white/90 p-3 rounded-xl shadow hover:scale-110 transition z-50"
+          >
+            <IoMdClose size={20} />
+          </motion.button>
+
+          <Canvas 
+            frameloop="always"
+            dpr={[1, 1.5]}
+            camera={{ position: [4.5, 1.8, 5], fov: 32 }}
+            resize={{ debounce: 0 }}>
+            <color attach="background" args={["#111115"]} />
+
+            <Suspense fallback={null}>
+              <StudioRoom />
+              <Model path={finalPath} color={color} />
+            </Suspense>
+
+            <Environment preset="warehouse" />
+            <ambientLight intensity={0.15} />
+            <spotLight position={[5, 8, 5]} intensity={80} angle={0.5} penumbra={0.8} castShadow />
+            <directionalLight position={[-5, 4, 2]} intensity={0.8} />
+            <spotLight position={[0, 5, -8]} intensity={40} angle={0.6} penumbra={1} />
+            <directionalLight position={[0, 10, 0]} intensity={0.5} />
+
+            <ContactShadows position={[0, 0.01, 0]} opacity={0.6} scale={20} blur={1} far={20} />
+
+            <OrbitControls
+              enablePan={false}
+              target={[0, 0.7, 0]}
+              minDistance={5}
+              maxDistance={10}
+              minPolarAngle={Math.PI / 6}
+              maxPolarAngle={Math.PI / 2.15}
+            />
+
+            <ResizeFix />
+
+            <EffectComposer>
+              <Bloom intensity={0.05} luminanceThreshold={0.6} />
+            </EffectComposer>
+          </Canvas>
+
+          <LoaderOverlay />
+        </div>
       </motion.div>
-    </motion.div>
+    )}
   </AnimatePresence>
 );
 }
