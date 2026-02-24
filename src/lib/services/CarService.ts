@@ -37,6 +37,8 @@ export class CarService {
 
     return rows.map((row: any) => ({
       carId: row.carId,
+      brandId: row.brandId,       
+      categoryId: row.categoryId,  
       carName: row.carName,
       year: row.year,
       price: row.price,
@@ -122,5 +124,7 @@ export class CarService {
     }
 
     return result;
+
+    
   }
 }

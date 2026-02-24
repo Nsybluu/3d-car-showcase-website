@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 import Container from "@/src/components/Main/Container";
 
@@ -13,9 +12,11 @@ interface Category {
 
 interface Props {
   title: string;
-  categories: Category[]; // ✅ รับจาก props
+  categories: Category[];
   className?: string;
   mode?: "filter" | "display";
+  onSelect?: (id: number) => void; // ⭐ เพิ่ม
+  selectedId?: number | null; // ⭐ เพิ่ม
 }
 
 export default function CategorySection({
@@ -23,15 +24,13 @@ export default function CategorySection({
   categories,
   className,
   mode = "display",
+  onSelect,
+  selectedId,
 }: Props) {
   const [showLeftFade, setShowLeftFade] = useState(false);
   const [showRightFade, setShowRightFade] = useState(true);
 
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const selectedCategory = searchParams.get("category");
 
   // 🔥 Scroll
   const scroll = (direction: "left" | "right") => {
@@ -68,23 +67,15 @@ export default function CategorySection({
   const handleClick = (id: number) => {
     if (mode !== "filter") return;
 
-    const params = new URLSearchParams(searchParams.toString());
-
-    if (selectedCategory === String(id)) {
-      params.delete("category");
-    } else {
-      params.set("category", id.toString());
+    if (onSelect) {
+      onSelect(id);
     }
-
-    router.replace(`/car?${params.toString()}`);
   };
 
   return (
     <section className={`bg-gray-100 py-24 relative ${className || ""}`}>
       <Container>
-        <h2 className="text-4xl font-semibold tracking-tight mb-14">
-          {title}
-        </h2>
+        <h2 className="text-4xl font-semibold tracking-tight mb-14">{title}</h2>
 
         <div className="relative">
           <div
@@ -93,8 +84,7 @@ export default function CategorySection({
           >
             {(categories || []).map((cat) => {
               const isActive =
-                mode === "filter" &&
-                selectedCategory === String(cat.categoryId);
+                mode === "filter" && selectedId === cat.categoryId;
 
               return (
                 <div

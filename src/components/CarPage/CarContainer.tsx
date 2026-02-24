@@ -41,7 +41,7 @@ function CarCard({ car, index }: { car: Car; index: number }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.05 }}
+      transition={{ duration: 0.25 }}
     >
       <Link href={`/car/${car.carId}`} className="h-[420px] block group">
         <div className="bg-gray-100 rounded-2xl border border-gray-200 hover:shadow-[0_10px_30px_rgba(0,0,0,0.10)] transition-all duration-300 overflow-hidden h-full flex flex-col">
@@ -139,12 +139,12 @@ export default function CarContainer({
               <p className="text-gray-500 mb-6 max-w-md">
                 Try changing your filter.
               </p>
-              <a
+              <Link
                 href="/car"
                 className="px-6 py-3 rounded-xl bg-black text-white hover:bg-gray-800 transition"
               >
                 Reset Filters
-              </a>
+              </Link>
             </motion.div>
           ) : (
             paginatedCars.map((car, i) => (
@@ -161,7 +161,7 @@ export default function CarContainer({
           {currentPage > 1 && (
             <button
               onClick={() => setCurrentPage((p) => p - 1)}
-              className="w-9 h-9 rounded-fullflex items-center justify-center border-gray-200 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.10)]"
+              className="w-9 h-9 rounded-full flex items-center justify-center border-gray-200 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.10)]"
             >
               <IoIosArrowBack size={18} />
             </button>

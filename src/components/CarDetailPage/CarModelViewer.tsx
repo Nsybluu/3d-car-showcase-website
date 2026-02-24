@@ -8,6 +8,7 @@ import { IoMdClose } from "react-icons/io";
 import * as THREE from "three";
 import * as React from "react";
 import { useProgress } from "@react-three/drei";
+import { motion, AnimatePresence } from "framer-motion";
 
 // ===============================
 // Per-model body material names (lowercase)
@@ -185,7 +186,6 @@ function Model({ path, color }: { path: string; color: string }) {
     model.traverse((c: any) => {
       if (c.isMesh && c.material?.name) debugNames.push(c.material.name);
     });
-    console.log('[CarViewer]', path, '[materials]', [...new Set(debugNames)]);
 
     const applyColor = (child: any) => {
       const mat = child.material;
@@ -285,6 +285,24 @@ function LoaderOverlay() {
   );
 }
 
+function ResizeFix({ trigger }: { trigger: boolean }) {
+  const { camera, gl, size } = useThree();
+
+  React.useEffect(() => {
+    const timeout = setTimeout(() => {
+      const perspectiveCamera = camera as THREE.PerspectiveCamera;
+
+      perspectiveCamera.aspect = size.width / size.height;
+      perspectiveCamera.updateProjectionMatrix();
+      gl.setSize(size.width, size.height);
+    }, 100);
+
+    return () => clearTimeout(timeout);
+  }, [trigger, size, camera, gl]);
+
+  return null;
+}
+
 // =============================
 // 🎥 MAIN VIEWER
 // =============================
@@ -313,30 +331,59 @@ export default function CarModelViewer({
   }, [fullScreen, onClose]);
 
   return (
-    <div
+  <AnimatePresence>
+    {fullScreen && (
+      <motion.div
+        key="overlay"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.5 }}
+        className="fixed inset-0 bg-black/70 backdrop-blur-md z-40"
+      />
+    )}
+
+    <motion.div
       className={
         fullScreen
-          ? "fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center"
-          : "w-full h-full bg-[#111115] rounded-2xl overflow-hidden"
+          ? "fixed inset-0 z-50 flex items-center justify-center"
+          : "relative w-full"
       }
     >
-      <div
-        className={
-          fullScreen
-            ? "relative w-[90vw] h-[85vh] bg-[#111115] rounded-2xl shadow-2xl overflow-hidden"
-            : "relative w-full h-full"
-        }
+      <motion.div
+        initial={false}
+        animate={{
+          scale: fullScreen ? 1 : 1,
+          y: fullScreen ? 0 : 0,
+        }}
+        transition={{
+          type: "spring",
+          stiffness: 120,
+          damping: 18,
+        }}
+        className="relative bg-[#111115] rounded-2xl shadow-2xl overflow-hidden"
+        style={{
+          width: fullScreen ? "90vw" : "100%",
+          height: fullScreen ? "85vh" : "430px",
+        }}
       >
         {fullScreen && (
-          <button
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
             onClick={onClose}
             className="absolute top-4 right-4 bg-white/90 p-3 rounded-xl shadow hover:scale-110 transition z-50"
           >
             <IoMdClose size={20} />
-          </button>
+          </motion.button>
         )}
 
-        <Canvas camera={{ position: [4.5, 1.8, 5], fov: 32 }}>
+        <Canvas 
+          frameloop="always"
+          dpr={[1, 1.5]}
+          camera={{ position: [4.5, 1.8, 5], fov: 32 }}>
           <color attach="background" args={["#111115"]} />
 
           <Suspense fallback={null}>
@@ -344,39 +391,14 @@ export default function CarModelViewer({
             <Model path={finalPath} color={color} />
           </Suspense>
 
-          {/* Environment for realistic reflections */}
           <Environment preset="warehouse" />
-
-          {/* Lighting - Showroom style */}
           <ambientLight intensity={0.15} />
-
-          {/* Key light - strong from front-top */}
-          <spotLight
-            position={[5, 8, 5]}
-            intensity={80}
-            angle={0.5}
-            penumbra={0.8}
-            castShadow
-          />
-          {/* Fill light - softer from left */}
+          <spotLight position={[5, 8, 5]} intensity={80} angle={0.5} penumbra={0.8} castShadow />
           <directionalLight position={[-5, 4, 2]} intensity={0.8} />
-          {/* Rim light - behind for car outline */}
-          <spotLight
-            position={[0, 5, -8]}
-            intensity={40}
-            angle={0.6}
-            penumbra={1}
-          />
-          {/* Subtle top light */}
+          <spotLight position={[0, 5, -8]} intensity={40} angle={0.6} penumbra={1} />
           <directionalLight position={[0, 10, 0]} intensity={0.5} />
 
-          <ContactShadows
-            position={[0, 0.01, 0]}
-            opacity={0.6}
-            scale={20}
-            blur={2}
-            far={20}
-          />
+          <ContactShadows position={[0, 0.01, 0]} opacity={0.6} scale={20} blur={1} far={20} />
 
           <OrbitControls
             enablePan={false}
@@ -391,8 +413,10 @@ export default function CarModelViewer({
             <Bloom intensity={0.05} luminanceThreshold={0.6} />
           </EffectComposer>
         </Canvas>
+
         <LoaderOverlay />
-      </div>
-    </div>
-  );
+      </motion.div>
+    </motion.div>
+  </AnimatePresence>
+);
 }

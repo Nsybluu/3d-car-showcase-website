@@ -16,6 +16,8 @@ interface Props {
   brands: Brand[];
   className?: string;
   background?: string;
+  onSelect?: (id: number) => void;
+  selectedId?: number | null;
   mode?: "filter" | "display";
 }
 
@@ -25,15 +27,13 @@ export default function BrandSection({
   className,
   background,
   mode = "display",
+  onSelect,
+  selectedId,
 }: Props) {
   const [showLeftFade, setShowLeftFade] = useState(false);
   const [showRightFade, setShowRightFade] = useState(true);
 
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const selectedBrand = searchParams.get("brand");
 
   // 🔥 Scroll
   const scroll = (direction: "left" | "right") => {
@@ -66,19 +66,12 @@ export default function BrandSection({
     return () => container.removeEventListener("scroll", handleScroll);
   }, [brands]);
 
-  // 🔥 Filter Click
   const handleClick = (id: number) => {
     if (mode !== "filter") return;
 
-    const params = new URLSearchParams(searchParams.toString());
-
-    if (selectedBrand === String(id)) {
-      params.delete("brand");
-    } else {
-      params.set("brand", id.toString());
+    if (onSelect) {
+      onSelect(id);
     }
-
-    router.replace(`/car?${params.toString()}`);
   };
 
   return (
@@ -95,7 +88,7 @@ export default function BrandSection({
           >
             {brands.map((brand, i) => {
               const isActive =
-                mode === "filter" && selectedBrand === String(brand.brandId);
+                mode === "filter" && selectedId === brand.brandId;
 
               return (
                 <div

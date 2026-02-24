@@ -1,7 +1,8 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 const navItems = [
   { name: "Home", href: "/" },
@@ -12,20 +13,6 @@ const navItems = [
 
 export default function Navbar() {
   const pathname = usePathname();
-  const router = useRouter();
-
-  const handleNavigate = (href: string) => {
-    if (pathname === href) return;
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-
-    setTimeout(() => {
-      router.push(href);
-    }, 300);
-  };
 
   return (
     <nav className="fixed top-6 left-0 w-full flex justify-center z-50">
@@ -39,9 +26,9 @@ export default function Navbar() {
           const active = pathname === item.href;
 
           return (
-            <button
+            <Link
               key={item.name}
-              onClick={() => handleNavigate(item.href)}
+              href={item.href}
               className={`
                 relative text-md font-semibold px-2 py-1 tracking-wide uppercase
                 transition-colors duration-300
@@ -61,7 +48,7 @@ export default function Navbar() {
                   }}
                 />
               )}
-            </button>
+            </Link>
           );
         })}
       </motion.div>
