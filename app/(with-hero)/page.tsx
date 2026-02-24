@@ -13,28 +13,44 @@ export const metadata = {
 export const revalidate = 120;
 
 export default async function Home() {
-  const brands = await BrandService.getAllBrands();
-  const categories = await CategoryService.getAllCategories();
-  const trending = await CarService.getTrending();
+  try {
+    const brands = await BrandService.getAllBrands();
+    const categories = await CategoryService.getAllCategories();
+    const trending = await CarService.getTrending();
 
-  return (
-    <section className="py-20">
-    <Container>
-      <CategorySection
-        title="Browse By Type"
-        mode="display"
-        categories={categories}
-      />
+    return (
+      <section className="py-20">
+        <Container>
+          <CategorySection
+            title="Browse By Type"
+            mode="display"
+            categories={categories}
+          />
 
-      <BrandSection
-        title="Explore Our Premium Brands"
-        className="pt-20"
-        mode="display"
-        brands={brands}
-      />
+          <BrandSection
+            title="Explore Our Premium Brands"
+            className="pt-20"
+            mode="display"
+            brands={brands}
+          />
 
-      <TrendingSection cars={trending} />
-    </Container>
-    </section>
-  );
+          <TrendingSection cars={trending} />
+        </Container>
+      </section>
+    );
+  } catch (error) {
+    console.error("Home build error:", error);
+
+    return (
+      <section className="py-20">
+        <Container>
+          <div className="text-center py-20">
+            <h2 className="text-2xl font-semibold">
+              Temporary loading issue
+            </h2>
+          </div>
+        </Container>
+      </section>
+    );
+  }
 }
