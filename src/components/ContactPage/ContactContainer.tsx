@@ -3,36 +3,8 @@
 import Image from "next/image";
 import { useState } from "react";
 import { FaGithub, FaGoogle, FaFacebookF, FaInstagram } from "react-icons/fa";
+import GlassCard from "@/src/components/ui/GlassCard";
 
-function GlassCard({
-  children,
-  dark = false,
-}: {
-  children: React.ReactNode;
-  dark?: boolean;
-}) {
-  return (
-    <div
-      className={`
-        relative rounded-3xl p-8
-        bg-white/10 backdrop-blur-xs
-        border border-white/10
-        shadow-[0_10px_40px_rgba(0,0,0,0.25)]
-        transition duration-300
-
-        before:content-['']
-        before:absolute before:inset-0
-        before:rounded-3xl
-        before:border before:border-white/20
-        before:pointer-events-none
-
-        ${dark ? "bg-black/30 text-white" : "bg-white/10 text-white"}
-    `}
-    >
-      {children}
-    </div>
-  );
-}
 
 function SocialIcon({
   children,
@@ -66,7 +38,7 @@ export default function ContactContainer() {
   const [loaded, setLoaded] = useState(false);
   
   return (
-    <section className="relative w-[843px] h-[1499px] overflow-hidden rounded-3xl mx-auto flex flex-col">
+    <section className="relative w-full h-[1400px] max-w-[843px] overflow-hidden rounded-3xl mx-auto flex flex-col">
       {/* Background Image */}
       <div className="absolute inset-0">
         {!loaded && <div className="absolute inset-0 skeleton" />}

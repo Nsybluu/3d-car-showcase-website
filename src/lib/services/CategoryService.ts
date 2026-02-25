@@ -1,11 +1,12 @@
 import { db } from "@/src/lib/db";
-import { Category } from "../models/Category";
+import { cacheLife } from "next/cache";
 
-export class CategoryService {
-  static async getAllCategories() {
+export async function getAllCategories() {
+  "use cache";
+  cacheLife("staticData");
+
   const [rows]: any[] = await db.query(
     "SELECT * FROM category ORDER BY categoryName ASC"
   );
   return rows;
-}
 }

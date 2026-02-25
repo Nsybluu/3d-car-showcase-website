@@ -2,8 +2,7 @@
 
 import { Canvas, useThree } from "@react-three/fiber";
 import { ContactShadows, Environment, OrbitControls, useGLTF } from "@react-three/drei";
-import { EffectComposer, Bloom } from "@react-three/postprocessing";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { IoMdClose } from "react-icons/io";
 import * as THREE from "three";
 import * as React from "react";
@@ -73,18 +72,16 @@ function isBodyMaterial(matName: string, path: string, forceHeuristic = false): 
 
   if (!forceHeuristic) {
     const key = getModelKey(path);
-    // per-model: exact match or .001/.002 suffix (Three.js renames duplicates)
     if (key) {
       const list = MODEL_BODY_MATERIALS[key];
       return list.some((m) => name === m || name.startsWith(m + "."));
     }
   }
 
-  // fallback heuristic
   return isBodyMaterialHeuristic(name);
 }
 
-// Compute bounding box from mesh geometry only (ignores helpers, lines, etc.)
+// Compute bounding box from mesh geometry only
 function getMeshBounds(object: THREE.Object3D): THREE.Box3 {
   const box = new THREE.Box3();
   object.updateMatrixWorld(true);
@@ -109,16 +106,12 @@ function Model({ path, color }: { path: string; color: string }) {
     if (!scene) return null;
 
     const clone = scene.clone(true);
-
     clone.updateMatrixWorld(true);
 
-    // ===============================
-    // 1️⃣ FIX AXIS (บางไฟล์ Z ขึ้น)
-    // ===============================
+    // 1️⃣ FIX AXIS
     let box = getMeshBounds(clone);
     const size = new THREE.Vector3();
     const center = new THREE.Vector3();
-
     box.getSize(size);
 
     if (size.y > size.x && size.y > size.z) {
@@ -128,9 +121,7 @@ function Model({ path, color }: { path: string; color: string }) {
       box.getSize(size);
     }
 
-    // ===============================
-    // 2️⃣ SCALE ให้ความยาวเท่ากัน
-    // ===============================
+    // 2️⃣ SCALE
     const targetLength = 3.8;
     const longestHorizontal = Math.max(size.x, size.z);
     const scaleFactor = targetLength / longestHorizontal;
@@ -141,15 +132,11 @@ function Model({ path, color }: { path: string; color: string }) {
     box.getSize(size);
     box.getCenter(center);
 
-    // ===============================
-    // 3️⃣ CENTER (X + Z)
-    // ===============================
+    // 3️⃣ CENTER
     clone.position.x -= center.x;
     clone.position.z -= center.z;
 
-    // ===============================
-    // 4️⃣ SUV / กระบะ ใหญ่ขึ้นนิด
-    // ===============================
+    // 4️⃣ SUV / กระบะ
     const lower = path.toLowerCase();
     if (
       lower.includes("fortuner") ||
@@ -160,9 +147,7 @@ function Model({ path, color }: { path: string; color: string }) {
       clone.scale.multiplyScalar(1.1);
     }
 
-    // ===============================
-    // 5️⃣ FINAL GROUNDING - reset Y then compute
-    // ===============================
+    // 5️⃣ FINAL GROUNDING
     clone.position.set(0, 0, 0);
     clone.updateMatrixWorld(true);
     box = new THREE.Box3().setFromObject(clone);
@@ -175,17 +160,9 @@ function Model({ path, color }: { path: string; color: string }) {
     return clone;
   }, [scene, path]);
 
-  // ===============================
   // 🎨 เปลี่ยนสี
-  // ===============================
   React.useEffect(() => {
     if (!model) return;
-
-    // Debug: log all mesh material names for this model
-    const debugNames: string[] = [];
-    model.traverse((c: any) => {
-      if (c.isMesh && c.material?.name) debugNames.push(c.material.name);
-    });
 
     const applyColor = (child: any) => {
       const mat = child.material;
@@ -201,14 +178,12 @@ function Model({ path, color }: { path: string; color: string }) {
       child.material.needsUpdate = true;
     };
 
-    // Pass 1: per-model exact matching
     let changed = 0;
     model.traverse((child: any) => {
       if (!child.isMesh) return;
       const mat = child.material;
       if (!mat || !mat.name) return;
       if (isBodyMaterial(mat.name, path)) {
-        // Check mesh-name exclusion
         const meshKey = getModelKey(path);
         const excludes = meshKey ? MODEL_MESH_EXCLUDES[meshKey] : null;
         if (excludes) {
@@ -220,9 +195,7 @@ function Model({ path, color }: { path: string; color: string }) {
       }
     });
 
-    // Pass 2: if per-model matching found NOTHING, fall back to heuristic
     if (changed === 0) {
-      console.warn('[CarViewer]', path, 'no per-model match, trying heuristic');
       model.traverse((child: any) => {
         if (!child.isMesh) return;
         const mat = child.material;
@@ -233,8 +206,6 @@ function Model({ path, color }: { path: string; color: string }) {
         }
       });
     }
-
-    console.log('[CarViewer]', path, 'changed', changed, 'meshes');
   }, [model, color, path]);
 
   if (!model) return null;
@@ -248,7 +219,6 @@ function Model({ path, color }: { path: string; color: string }) {
 function StudioRoom() {
   return (
     <group>
-      {/* Large cyclorama wall */}
       <mesh position={[0, 5, -12]}>
         <cylinderGeometry args={[30, 30, 15, 128, 1, true]} />
         <meshStandardMaterial
@@ -257,8 +227,6 @@ function StudioRoom() {
           roughness={0.9}
         />
       </mesh>
-
-      {/* Floor at Y=0 */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
         <planeGeometry args={[60, 60]} />
         <meshStandardMaterial color="#18181c" metalness={0.6} roughness={0.3} />
@@ -269,7 +237,6 @@ function StudioRoom() {
 
 function LoaderOverlay() {
   const { active, progress } = useProgress();
-
   if (!active) return null;
 
   return (
@@ -337,81 +304,62 @@ export default function CarModelViewer({
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [fullScreen, onClose]);
-  
+
+  // Self-healing: when WebGL context is lost (page navigation),
+  // increment key to force fresh Canvas. Does NOT fire during
+  // fullscreen toggle because the Canvas stays mounted.
+  const [canvasKey, setCanvasKey] = useState(0);
+  const handleCanvasCreated = useCallback((state: any) => {
+    const canvas = state.gl.domElement;
+    canvas.addEventListener('webglcontextlost', () => {
+      setCanvasKey(prev => prev + 1);
+    });
+  }, []);
+
   return (
-    
-  <AnimatePresence>
-    {/* Normal mode: absolute fills parent grid cell exactly */}
-    {!fullScreen && (
-      <div className="absolute inset-0">
-        <div className="relative w-full h-full bg-[#111115] rounded-2xl shadow-2xl overflow-hidden">
-        <Canvas 
-          frameloop="always"
-          dpr={[1, 1.5]}
-          camera={{ position: [4.5, 1.8, 5], fov: 32 }}
-          resize={{ debounce: 0 }}>
-          <color attach="background" args={["#111115"]} />
-
-          <Suspense fallback={null}>
-            <StudioRoom />
-            <Model path={finalPath} color={color} />
-          </Suspense>
-
-          <Environment preset="warehouse" />
-          <ambientLight intensity={0.15} />
-          <spotLight position={[5, 8, 5]} intensity={80} angle={0.5} penumbra={0.8} castShadow />
-          <directionalLight position={[-5, 4, 2]} intensity={0.8} />
-          <spotLight position={[0, 5, -8]} intensity={40} angle={0.6} penumbra={1} />
-          <directionalLight position={[0, 10, 0]} intensity={0.5} />
-
-          <ContactShadows position={[0, 0.01, 0]} opacity={0.6} scale={20} blur={1} far={20} />
-
-          <OrbitControls
-            enablePan={false}
-            target={[0, 0.7, 0]}
-            minDistance={5}
-            maxDistance={10}
-            minPolarAngle={Math.PI / 6}
-            maxPolarAngle={Math.PI / 2.15}
-          />
-
-          <ResizeFix />
-
-          <EffectComposer>
-            <Bloom intensity={0.05} luminanceThreshold={0.6} />
-          </EffectComposer>
-        </Canvas>
-
-        <LoaderOverlay />
-        </div>
-      </div>
-    )}
-
-    {/* Fullscreen mode: fixed overlay, completely separate container */}
-    {fullScreen && (
-      <motion.div
-        key="fs-overlay"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.3 }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md"
-      >
-        <div
-          className="relative bg-[#111115] rounded-2xl shadow-2xl overflow-hidden"
-          style={{ width: "90vw", height: "85vh" }}
-        >
-          <motion.button
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.25 }}
+    <>
+      {/* Fullscreen backdrop overlay */}
+      <AnimatePresence>
+        {fullScreen && (
+          <motion.div
+            key="fs-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-40 bg-black/70 backdrop-blur-md"
             onClick={onClose}
-            className="absolute top-4 right-4 bg-white/90 p-3 rounded-xl shadow hover:scale-110 transition z-50"
-          >
-            <IoMdClose size={20} />
-          </motion.button>
+          />
+        )}
+      </AnimatePresence>
 
-          <Canvas 
+      {/* Single Canvas container — CSS changes for fullscreen, Canvas stays mounted */}
+      <div
+        className={
+          fullScreen
+            ? "fixed z-50 rounded-2xl shadow-2xl overflow-hidden"
+            : "absolute inset-0"
+        }
+        style={
+          fullScreen
+            ? { top: "7.5vh", left: "5vw", width: "90vw", height: "85vh" }
+            : undefined
+        }
+      >
+        <div className="relative w-full h-full bg-[#111115] rounded-2xl shadow-2xl overflow-hidden">
+          {/* Close button (fullscreen only) */}
+          {fullScreen && (
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 bg-white/90 p-3 rounded-xl shadow hover:scale-110 transition z-50"
+            >
+              <IoMdClose size={20} />
+            </button>
+          )}
+
+          <Canvas
+            key={`viewer-${canvasKey}`}
+            onCreated={handleCanvasCreated}
             frameloop="always"
             dpr={[1, 1.5]}
             camera={{ position: [4.5, 1.8, 5], fov: 32 }}
@@ -442,16 +390,11 @@ export default function CarModelViewer({
             />
 
             <ResizeFix />
-
-            <EffectComposer>
-              <Bloom intensity={0.05} luminanceThreshold={0.6} />
-            </EffectComposer>
           </Canvas>
 
           <LoaderOverlay />
         </div>
-      </motion.div>
-    )}
-  </AnimatePresence>
-);
+      </div>
+    </>
+  );
 }

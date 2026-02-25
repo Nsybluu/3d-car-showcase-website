@@ -1,22 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
-import CarModelViewer from "./CarModelViewer";
+import dynamic from "next/dynamic";
 import CarColorSelect from "./CarColorSelect";
 import CarSpecSection from "./​CarSpecSection";
 import { Maximize2 } from "lucide-react";
+import { formatTHB } from "@/src/lib/format";
+import type { Car, CarColor, CarSpecSection as CarSpecSectionType } from "@/src/types";
+
+// Dynamic import with ssr: false ensures:
+// 1. No prerendering of WebGL Canvas (avoids hydration mismatch)
+// 2. Three.js only loads on client (reduces server bundle)
+const CarModelViewer = dynamic(() => import("./CarModelViewer"), {
+  ssr: false,
+  loading: () => (
+    <div className="absolute inset-0 flex items-center justify-center bg-[#111115] rounded-2xl">
+      <div className="relative w-16 h-16">
+        <div className="absolute inset-0 rounded-full border-2 border-white/10" />
+        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-white/80 animate-spin" />
+      </div>
+    </div>
+  ),
+});
 
 interface Props {
-  car: any;
+  car: Car;
   modelPath: string;
-  colors: {
-    id: number;
-    name: string;
-    code: string;
-    image: string;
-  }[];
-  specs: any[];
+  colors: CarColor[];
+  specs: CarSpecSectionType[];
 }
 
 export default function CarDetailContainer({
@@ -32,10 +43,7 @@ export default function CarDetailContainer({
     <div className="max-w-7xl mx-auto px-6 py-12">
       <div className="grid lg:grid-cols-[7fr_3fr] grid-cols-1 gap-12 items-stretch">
         {/* LEFT - MODEL */}
-        <motion.div
-          initial={{ opacity: 0, x: -30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+        <div
           className="relative rounded-2xl overflow-hidden shadow-md min-h-[400px]"
         >
           <CarModelViewer
@@ -52,13 +60,9 @@ export default function CarDetailContainer({
           >
             <Maximize2 size={20} />
           </button>
-        </motion.div>
+        </div>
         {/* RIGHT SIDE */}
-        <motion.div
-          initial={{ opacity: 0, x: 30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
-        >
+        <div>
           {/* 🔹 ชื่อรถ + ปี อยู่ด้านบน */}
           <div className="mb-6">
             <h3 className="text-3xl font-bold tracking-tight">
@@ -68,10 +72,7 @@ export default function CarDetailContainer({
               </span>
             </h3>
             <p className="text-gray-400 text-md mt-2 font-medium">
-              {new Intl.NumberFormat("th-TH", {
-                style: "currency",
-                currency: "THB",
-              }).format(car.price)}
+              {formatTHB(car.price)}
             </p>
           </div>
 
@@ -85,7 +86,7 @@ export default function CarDetailContainer({
               onChange={setColor}
             />
           </div>
-        </motion.div>
+        </div>
       </div>
       <CarSpecSection specs={specs} />
     </div>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { CarService } from "@/src/lib/services/CarService";
+import { getAll } from "@/src/lib/services/CarService";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   const brand = searchParams.get("brand");
   const category = searchParams.get("category");
 
-  const cars = await CarService.getAll({
+  const cars = await getAll({
     brandId: brand ? Number(brand) : undefined,
     categoryId: category ? Number(category) : undefined,
   });

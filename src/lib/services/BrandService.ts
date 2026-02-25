@@ -1,12 +1,13 @@
 // src/lib/services/BrandService.ts
 import { db } from "../db";
-import { Brand } from "../models/Brand";
+import { cacheLife } from "next/cache";
 
-export class BrandService {
-  static async getAllBrands() {
+export async function getAllBrands() {
+  "use cache";
+  cacheLife("staticData");
+
   const [rows]: any[] = await db.query(
     "SELECT * FROM brand ORDER BY brandName ASC"
   );
   return rows;
-}
 }

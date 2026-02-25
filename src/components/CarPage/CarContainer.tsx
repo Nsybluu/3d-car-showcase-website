@@ -7,36 +7,13 @@ import { MdOutlineArrowOutward } from "react-icons/md";
 import { LiaCarSideSolid } from "react-icons/lia";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import { motion, AnimatePresence } from "framer-motion";
-
-interface Car {
-  carId: number;
-  carName: string;
-  year: number;
-  price: number;
-  imageUrl: string;
-}
+import LazyImage from "@/src/components/ui/LazyImage";
+import { formatTHB } from "@/src/lib/format";
+import type { Car } from "@/src/types";
 
 const ITEMS_PER_PAGE = 16;
 
-function CarImage({ src, alt }: { src: string; alt: string }) {
-  const [loaded, setLoaded] = useState(false);
-
-  return (
-    <div className="relative w-full h-full">
-      {!loaded && <div className="absolute inset-0 skeleton" />}
-      <img
-        src={src}
-        alt={alt}
-        className={`w-full h-full object-cover transition duration-500 group-hover:scale-105 ${
-          loaded ? "opacity-100" : "opacity-0"
-        }`}
-        onLoad={() => setLoaded(true)}
-      />
-    </div>
-  );
-}
-
-function CarCard({ car, index }: { car: Car; index: number }) {
+function CarCard({ car }: { car: Car }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -46,7 +23,7 @@ function CarCard({ car, index }: { car: Car; index: number }) {
       <Link href={`/car/${car.carId}`} className="h-[420px] block group">
         <div className="bg-gray-100 rounded-2xl border border-gray-200 hover:shadow-[0_10px_30px_rgba(0,0,0,0.10)] transition-all duration-300 overflow-hidden h-full flex flex-col">
           <div className="h-48 overflow-hidden">
-            <CarImage src={car.imageUrl} alt={car.carName} />
+            <LazyImage src={car.imageUrl} alt={car.carName} className="w-full h-full object-cover transition duration-500 group-hover:scale-105" />
           </div>
 
           <div className="p-5 flex flex-col flex-1">
@@ -55,12 +32,7 @@ function CarCard({ car, index }: { car: Car; index: number }) {
             </h4>
 
             <div className="mt-auto flex justify-between items-center">
-              <p className="font-bold">
-                {new Intl.NumberFormat("th-TH", {
-                  style: "currency",
-                  currency: "THB",
-                }).format(car.price)}
-              </p>
+              <p className="font-bold">{formatTHB(car.price)}</p>
 
               <span className="inline-flex items-center gap-1 text-blue-600 text-xs group-hover:text-blue-800 transition">
                 View Details
@@ -72,6 +44,30 @@ function CarCard({ car, index }: { car: Car; index: number }) {
       </Link>
     </motion.div>
   );
+}
+
+// Pagination logic — extracted as a pure function
+function getPaginationNumbers(currentPage: number, totalPages: number) {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  const pages: (number | string)[] = [1];
+
+  if (currentPage > 3) pages.push("...");
+
+  for (
+    let i = Math.max(2, currentPage - 1);
+    i <= Math.min(totalPages - 1, currentPage + 1);
+    i++
+  ) {
+    pages.push(i);
+  }
+
+  if (currentPage < totalPages - 2) pages.push("...");
+  pages.push(totalPages);
+
+  return pages;
 }
 
 export default function CarContainer({
@@ -91,37 +87,6 @@ export default function CarContainer({
   useEffect(() => {
     setCurrentPage(1);
   }, [filterKey]);
-
-  // Generate pagination numbers with ...
-  const getPaginationNumbers = () => {
-    const pages = [];
-
-    if (totalPages <= 7) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
-
-    pages.push(1);
-
-    if (currentPage > 3) {
-      pages.push("...");
-    }
-
-    for (
-      let i = Math.max(2, currentPage - 1);
-      i <= Math.min(totalPages - 1, currentPage + 1);
-      i++
-    ) {
-      pages.push(i);
-    }
-
-    if (currentPage < totalPages - 2) {
-      pages.push("...");
-    }
-
-    pages.push(totalPages);
-
-    return pages;
-  };
 
   return (
     <Container>
@@ -147,8 +112,8 @@ export default function CarContainer({
               </Link>
             </motion.div>
           ) : (
-            paginatedCars.map((car, i) => (
-              <CarCard key={car.carId} car={car} index={i} />
+            paginatedCars.map((car) => (
+              <CarCard key={car.carId} car={car} />
             ))
           )}
         </AnimatePresence>
@@ -168,7 +133,7 @@ export default function CarContainer({
           )}
 
           {/* Page Numbers */}
-          {getPaginationNumbers().map((item, index) =>
+          {getPaginationNumbers(currentPage, totalPages).map((item, index) =>
             item === "..." ? (
               <span key={index} className="px-2">
                 ...

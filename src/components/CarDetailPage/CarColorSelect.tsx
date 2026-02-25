@@ -1,34 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import LazyImage from "@/src/components/ui/LazyImage";
+import type { CarColor } from "@/src/types";
 
 interface Props {
-  colors: {
-    id: number;
-    name: string;
-    code: string;
-    image: string;
-  }[];
+  colors: CarColor[];
   selected: string;
   onChange: (color: string) => void;
 }
 
-function ColorImage({ src, alt }: { src: string; alt: string }) {
-  const [loaded, setLoaded] = useState(false);
-  return (
-    <div className="relative w-full h-full">
-      {!loaded && <div className="absolute inset-0 skeleton" />}
-      <img
-        src={src}
-        alt={alt}
-        loading="lazy"
-        decoding="async"
-        className={`w-full h-full object-cover transition duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
-        onLoad={() => setLoaded(true)}
-      />
-    </div>
-  );
-}
 
 export default function CarColorSelect({ colors, selected, onChange }: Props) {
   return (
@@ -47,7 +27,7 @@ export default function CarColorSelect({ colors, selected, onChange }: Props) {
           `}
         >
           <div className="h-24">
-            <ColorImage src={c.image} alt={c.name} />
+            <LazyImage src={c.image} alt={c.name} />
           </div>
           <div
             className={`absolute bottom-0 inset-x-0 px-2 py-1.5 text-xs font-medium text-center transition-all duration-300
@@ -66,7 +46,7 @@ export default function CarColorSelect({ colors, selected, onChange }: Props) {
       {/* 🌈 Custom */}
       <div className="relative rounded-xl overflow-hidden border-2 border-gray-200 hover:border-gray-400 transition-all duration-300 hover:shadow-md">
         <div className="h-24">
-          <ColorImage src="https://pub-e9ea266beeb9463ca5d6f4f6b211dc6e.r2.dev/colors/rainbow.png" alt="Custom Color" />
+          <LazyImage src="https://pub-e9ea266beeb9463ca5d6f4f6b211dc6e.r2.dev/colors/rainbow.png" alt="Custom Color" />
         </div>
 
         <div className="absolute bottom-0 inset-x-0 px-2 py-1.5 bg-black/50 backdrop-blur-sm">

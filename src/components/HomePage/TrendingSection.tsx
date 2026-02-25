@@ -2,41 +2,14 @@
 
 import { useRef, useState, useEffect } from "react";
 import Container from "@/src/components/Main/Container";
-import {
-  MdOutlineArrowOutward,
-  MdChevronLeft,
-  MdChevronRight,
-} from "react-icons/md";
+import { MdOutlineArrowOutward, MdChevronLeft, MdChevronRight } from "react-icons/md";
 import Link from "next/link";
-
-interface Car {
-  carId: number;
-  carName: string;
-  year: number;
-  imageUrl: string;
-  price: number;
-}
+import LazyImage from "@/src/components/ui/LazyImage";
+import { formatTHB } from "@/src/lib/format";
+import type { Car } from "@/src/types";
 
 interface Props {
   cars: Car[];
-}
-
-function CarImage({ src, alt }: { src: string; alt: string }) {
-  const [loaded, setLoaded] = useState(false);
-
-  return (
-    <div className="relative w-full h-full">
-      {!loaded && <div className="absolute inset-0 skeleton" />}
-      <img
-        src={src}
-        alt={alt}
-        className={`w-full h-full object-cover transition duration-500 group-hover:scale-105 ${
-          loaded ? "opacity-100" : "opacity-0"
-        }`}
-        onLoad={() => setLoaded(true)}
-      />
-    </div>
-  );
 }
 
 export default function TrendingSection({ cars }: Props) {
@@ -83,7 +56,7 @@ export default function TrendingSection({ cars }: Props) {
             ref={scrollRef}
             className="flex gap-6 overflow-x-auto scroll-smooth no-scrollbar"
           >
-            {(cars || []).map((car, i) => (
+            {(cars || []).map((car) => (
               <Link
                 key={car.carId}
                 href={`/car/${car.carId}`}
@@ -99,7 +72,7 @@ export default function TrendingSection({ cars }: Props) {
                     flex flex-col"
                 >
                   <div className="h-48 overflow-hidden">
-                    <CarImage src={car.imageUrl} alt={car.carName} />
+                    <LazyImage src={car.imageUrl} alt={car.carName} className="w-full h-full object-cover transition duration-500 group-hover:scale-105" />
                   </div>
 
                   <div className="p-5 flex flex-col flex-1">
@@ -109,10 +82,7 @@ export default function TrendingSection({ cars }: Props) {
 
                     <div className="mt-auto flex justify-between items-center pt-8">
                       <p className="text-black font-bold">
-                        {new Intl.NumberFormat("th-TH", {
-                          style: "currency",
-                          currency: "THB",
-                        }).format(car.price)}
+                        {formatTHB(car.price)}
                       </p>
 
                       <span className="inline-flex items-center gap-1 text-blue-600 text-xs transition-colors duration-300 group-hover:text-blue-800">

@@ -4,28 +4,7 @@ import { useState } from "react";
 import BrandSection from "../HomePage/BrandSection";
 import CategorySection from "../HomePage/CategorySection";
 import CarContainer from "./CarContainer";
-
-interface Brand {
-  brandId: number;
-  brandName: string;
-  logoUrl: string;
-}
-
-interface Category {
-  categoryId: number;
-  categoryName: string;
-  logoUrl: string;
-}
-
-interface Car {
-  carId: number;
-  brandId: number;
-  categoryId: number;
-  carName: string;
-  year: number;
-  price: number;
-  imageUrl: string;
-}
+import type { Brand, Category, Car } from "@/src/types";
 
 interface CarListClientProps {
   brands: Brand[];
@@ -41,7 +20,7 @@ export default function CarListClient({
   const [selectedBrand, setSelectedBrand] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
 
-  const filteredCars = cars.filter((car: any) => {
+  const filteredCars = cars.filter((car) => {
     const matchBrand = selectedBrand ? car.brandId === selectedBrand : true;
     const matchCategory = selectedCategory
       ? car.categoryId === selectedCategory

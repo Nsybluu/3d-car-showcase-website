@@ -1,106 +1,125 @@
 import { db } from "@/src/lib/db";
 import { Car } from "../models/Car";
+import { cacheLife } from "next/cache";
+import type { CarSpecSection } from "@/src/types";
 
-export class CarService {
-  static async getTrending() {
-    const [rows]: any[] = await db.query(
-      "SELECT * FROM car WHERE isTrending = 1 ORDER BY displayOrder ASC",
-    );
+export async function getTrending() {
+  "use cache";
+  cacheLife("frequentData");
 
-    return rows.map((row: any) => ({
-      carId: row.carId,
-      carName: row.carName,
-      year: row.year,
-      price: row.price,
-      imageUrl: row.imageUrl,
-    }));
+  const [rows]: any[] = await db.query(
+    "SELECT * FROM car WHERE isTrending = 1 ORDER BY displayOrder ASC",
+  );
+
+  return rows.map((row: any) => ({
+    carId: row.carId,
+    carName: row.carName,
+    year: row.year,
+    price: row.price,
+    imageUrl: row.imageUrl,
+  }));
+}
+
+// ดึงรถทั้งหมด โดยสามารถ filter ด้วย brandId และ categoryId ได้
+export async function getAll(filter?: { brandId?: number; categoryId?: number }) {
+  "use cache";
+  cacheLife("frequentData");
+
+  let sql = "SELECT * FROM car WHERE 1=1";
+  const params: any[] = [];
+
+  if (filter?.brandId !== undefined) {
+    sql += " AND brandId = ?";
+    params.push(filter.brandId);
   }
 
-  // ดึงรถทั้งหมด โดยสามารถ filter ด้วย brandId และ categoryId ได้
-  static async getAll(filter?: { brandId?: number; categoryId?: number }) {
-    let sql = "SELECT * FROM car WHERE 1=1";
-    const params: any[] = [];
-
-    if (filter?.brandId !== undefined) {
-      sql += " AND brandId = ?";
-      params.push(filter.brandId);
-    }
-
-    if (filter?.categoryId !== undefined) {
-      sql += " AND categoryId = ?";
-      params.push(filter.categoryId);
-    }
-
-    sql += " ORDER BY year DESC";
-
-    const [rows]: any[] = await db.query(sql, params);
-
-    return rows.map((row: any) => ({
-      carId: row.carId,
-      brandId: row.brandId,
-      categoryId: row.categoryId,
-      carName: row.carName,
-      year: row.year,
-      price: row.price,
-      imageUrl: row.imageUrl,
-    }));
+  if (filter?.categoryId !== undefined) {
+    sql += " AND categoryId = ?";
+    params.push(filter.categoryId);
   }
 
-  // ดึงข้อมูลรถตาม carId
-  static async getById(id: number) {
-    if (!id || isNaN(id)) return null;
+  sql += " ORDER BY year DESC";
 
-    const [rows]: any[] = await db.query("SELECT * FROM car WHERE carId = ?", [
-      id,
-    ]);
+  const [rows]: any[] = await db.query(sql, params);
 
-    if (rows.length === 0) return null;
+  return rows.map((row: any) => ({
+    carId: row.carId,
+    brandId: row.brandId,
+    categoryId: row.categoryId,
+    carName: row.carName,
+    year: row.year,
+    price: row.price,
+    imageUrl: row.imageUrl,
+  }));
+}
 
-    return rows[0] as Car;
-  }
+// ดึงข้อมูลรถตาม carId
+export async function getById(id: number) {
+  "use cache";
+  cacheLife("frequentData");
 
-  // ดึง modelPath ของรถจาก carId
-  static async getModelByCarId(carId: number): Promise<string> {
-    const [rows]: any[] = await db.query(
-      `
+  if (!id || isNaN(id)) return null;
+
+  const [rows]: any[] = await db.query("SELECT * FROM car WHERE carId = ?", [
+    id,
+  ]);
+
+  if (rows.length === 0) return null;
+
+  return rows[0] as Car;
+}
+
+// ดึง modelPath ของรถจาก carId
+export async function getModelByCarId(carId: number): Promise<string> {
+  "use cache";
+  cacheLife("frequentData");
+
+  const [rows]: any[] = await db.query(
+    `
     SELECT modelUrl 
     FROM car_model 
     WHERE carId = ? 
     ORDER BY isDefault DESC 
     LIMIT 1
     `,
-      [carId],
-    );
+    [carId],
+  );
 
-    // 🚨 ถ้าไม่มี model ใน DB
-    if (!rows || rows.length === 0) {
-      return "https://pub-6c082fd2916247f384ce18d4075bfb85.r2.dev/defaultCar.glb";
-    }
-
-    // 🚨 ถ้า modelUrl ว่าง
-    if (!rows[0].modelUrl) {
-      return "https://pub-6c082fd2916247f384ce18d4075bfb85.r2.dev/defaultCar.glb";
-    }
-
-    return rows[0].modelUrl;
+  // 🚨 ถ้าไม่มี model ใน DB
+  if (!rows || rows.length === 0) {
+    return "https://pub-6c082fd2916247f384ce18d4075bfb85.r2.dev/defaultCar.glb";
   }
 
-  // ดึงสีรถทั้งหมดจาก DB
-  static async getAllColors() {
-    const [rows]: any[] = await db.query(
-      "SELECT * FROM color ORDER BY displayOrder ASC",
-    );
-
-    return rows.map((row: any) => ({
-      id: row.colorId,
-      name: row.colorName,
-      code: row.colorCode,
-      image: row.imageUrl,
-    }));
+  // 🚨 ถ้า modelUrl ว่าง
+  if (!rows[0].modelUrl) {
+    return "https://pub-6c082fd2916247f384ce18d4075bfb85.r2.dev/defaultCar.glb";
   }
 
-  // ดึงสเปครถตาม carId
-  static async getSpecsByCarId(carId: number) {
+  return rows[0].modelUrl;
+}
+
+// ดึงสีรถทั้งหมดจาก DB
+export async function getAllColors() {
+  "use cache";
+  cacheLife("staticData");
+
+  const [rows]: any[] = await db.query(
+    "SELECT * FROM color ORDER BY displayOrder ASC",
+  );
+
+  return rows.map((row: any) => ({
+    id: row.colorId,
+    name: row.colorName,
+    code: row.colorCode,
+    image: row.imageUrl,
+  }));
+}
+
+// ดึงสเปครถตาม carId
+export async function getSpecsByCarId(carId: number): Promise<CarSpecSection[]> {
+  "use cache";
+  cacheLife("frequentData");
+
   const [rows]: any[] = await db.query(
     `
     SELECT 
@@ -143,5 +162,4 @@ export class CarService {
   }
 
   return Object.values(sectionsMap);
-}
 }

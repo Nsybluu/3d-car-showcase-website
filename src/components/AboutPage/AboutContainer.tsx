@@ -10,6 +10,7 @@ import {
   SiMysql,
   SiThreedotjs,
 } from "react-icons/si";
+import GlassCard from "@/src/components/ui/GlassCard";
 
 // Icon Component
 function TechIcon({ children }: { children: React.ReactNode }) {
@@ -30,36 +31,6 @@ function TechIcon({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Glass Card Component
-function GlassCard({
-  children,
-  dark = false,
-}: {
-  children: React.ReactNode;
-  dark?: boolean;
-}) {
-  return (
-    <div
-      className={`
-        relative rounded-3xl p-8
-        bg-white/10 backdrop-blur-xs
-        border border-white/10
-        shadow-[0_10px_40px_rgba(0,0,0,0.25)]
-        transition duration-300
-
-        before:content-['']
-        before:absolute before:inset-0
-        before:rounded-3xl
-        before:border before:border-white/20
-        before:pointer-events-none
-
-        ${dark ? "bg-black/30 text-white" : "bg-white/10 text-white"}
-    `}
-    >
-      {children}
-    </div>
-  );
-}
 
 export default function AboutContainer() {
   const [loaded, setLoaded] = useState(false);

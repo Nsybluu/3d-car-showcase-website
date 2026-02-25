@@ -2,21 +2,19 @@ import CategorySection from "@/src/components/HomePage/CategorySection";
 import BrandSection from "@/src/components/HomePage/BrandSection";
 import TrendingSection from "@/src/components/HomePage/TrendingSection";
 import Container from "@/src/components/Main/Container";
-import { CarService } from "@/src/lib/services/CarService";
-import { CategoryService } from "@/src/lib/services/CategoryService";
-import { BrandService } from "@/src/lib/services/BrandService";
+import { getTrending } from "@/src/lib/services/CarService";
+import { getAllCategories } from "@/src/lib/services/CategoryService";
+import { getAllBrands } from "@/src/lib/services/BrandService";
 
 export const metadata = {
   title: "LoveCodeLoveCar",
 };
 
-export const revalidate = 300;
-
 export default async function Home() {
   try {
-    const brands = await BrandService.getAllBrands();
-    const categories = await CategoryService.getAllCategories();
-    const trending = await CarService.getTrending();
+    const brands = await getAllBrands();
+    const categories = await getAllCategories();
+    const trending = await getTrending();
 
     return (
       <section className="py-20">

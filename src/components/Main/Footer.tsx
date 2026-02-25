@@ -3,6 +3,11 @@
 import Container from "@/src/components/Main/Container";
 
 import { FaFacebookF, FaInstagram } from "react-icons/fa";
+import { Suspense } from "react";
+
+function CopyrightYear() {
+  return <>{new Date().getFullYear()}</>;
+}
 
 export default function Footer() {
   return (
@@ -41,7 +46,7 @@ export default function Footer() {
 
       <div className="border-t border-gray-300 py-4 text-sm text-gray-500">
         <Container>
-          <p className="text-center">© {new Date().getFullYear()} LoveCodeLoveCar. All rights reserved.</p>
+          <p className="text-center">© <Suspense fallback="">{<CopyrightYear />}</Suspense> LoveCodeLoveCar. All rights reserved.</p>
         </Container>
       </div>
     </footer>

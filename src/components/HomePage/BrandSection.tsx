@@ -1,15 +1,9 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 import Container from "@/src/components/Main/Container";
-
-interface Brand {
-  brandId: number;
-  brandName: string;
-  logoUrl: string;
-}
+import type { Brand } from "@/src/types";
+import { useHorizontalScroll } from "@/src/hooks/useHorizontalScroll";
 
 interface Props {
   title: string;
@@ -30,48 +24,11 @@ export default function BrandSection({
   onSelect,
   selectedId,
 }: Props) {
-  const [showLeftFade, setShowLeftFade] = useState(false);
-  const [showRightFade, setShowRightFade] = useState(true);
-
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  // 🔥 Scroll
-  const scroll = (direction: "left" | "right") => {
-    const container = scrollRef.current;
-    if (!container) return;
-
-    const scrollAmount = container.clientWidth * 0.8;
-
-    container.scrollBy({
-      left: direction === "left" ? -scrollAmount : scrollAmount,
-      behavior: "smooth",
-    });
-  };
-
-  // 🔥 Detect Scroll
-  useEffect(() => {
-    const container = scrollRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      const { scrollLeft, scrollWidth, clientWidth } = container;
-
-      setShowLeftFade(scrollLeft > 0);
-      setShowRightFade(scrollLeft + clientWidth < scrollWidth - 1);
-    };
-
-    handleScroll();
-    container.addEventListener("scroll", handleScroll);
-
-    return () => container.removeEventListener("scroll", handleScroll);
-  }, [brands]);
+  const { scrollRef, showLeftFade, showRightFade, scroll } = useHorizontalScroll(brands);
 
   const handleClick = (id: number) => {
     if (mode !== "filter") return;
-
-    if (onSelect) {
-      onSelect(id);
-    }
+    if (onSelect) onSelect(id);
   };
 
   return (
@@ -86,7 +43,7 @@ export default function BrandSection({
             ref={scrollRef}
             className="flex gap-6 overflow-x-auto scroll-smooth no-scrollbar"
           >
-            {brands.map((brand, i) => {
+            {brands.map((brand) => {
               const isActive =
                 mode === "filter" && selectedId === brand.brandId;
 
