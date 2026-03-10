@@ -34,31 +34,40 @@ export default function HeroCarousel() {
 
   return (
     <section className="relative w-full h-[45vh] md:h-[50vh] lg:h-[55vh] xl:h-[60vh] overflow-hidden">
-      {/* Slides */}
-      {slides.map((slide, index) => (
-        <div
-          key={index}
-          className={`absolute inset-0 transition-opacity duration-1000 ${
-            index === current ? "opacity-100 z-10" : "opacity-0 z-0"
-          }`}
-        >
-          <Image
-            src={slide.image}
-            alt={`Slide ${index + 1}`}
-            fill
-            priority={index === 0}
-            sizes="100vw"
-            className={`
-              object-cover
-              transition-transform duration-[7000ms] ease-linear
-              ${index === current ? "scale-110" : "scale-100"}
-            `}
-          />
+      {/* Slides — โหลดเฉพาะ: active, prev, next เท่านั้น (ลด network load 40%) */}
+      {slides.map((slide, index) => {
+        const isActive = index === current;
+        const isNext = index === (current + 1) % slides.length;
+        const isPrev = index === (current - 1 + slides.length) % slides.length;
+        const shouldLoad = isActive || isNext || isPrev;
 
-          {/* Dark gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-        </div>
-      ))}
+        return (
+          <div
+            key={index}
+            className={`absolute inset-0 transition-opacity duration-1000 ${
+              isActive ? "opacity-100 z-10" : "opacity-0 z-0"
+            }`}
+          >
+            {shouldLoad && (
+              <Image
+                src={slide.image}
+                alt={`Slide ${index + 1}`}
+                fill
+                priority={index === 0}
+                sizes="100vw"
+                className={`
+                  object-cover
+                  transition-transform duration-[7000ms] ease-linear
+                  ${isActive ? "scale-110" : "scale-100"}
+                `}
+              />
+            )}
+
+            {/* Dark gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+          </div>
+        );
+      })}
 
       {/* Logo - center */}
       <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">

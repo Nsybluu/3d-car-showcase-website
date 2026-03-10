@@ -12,6 +12,7 @@ export interface Car {
   brandId?: number;
   categoryId?: number;
   modelPath?: string | null;
+  isTrending?: boolean;
 }
 
 export interface Brand {

@@ -3,6 +3,7 @@ import CarDetailHeader from "@/src/components/CarDetailPage/CarDetailHeader";
 import CarDetailContainer from "@/src/components/CarDetailPage/CarDetailContainer";
 import { Suspense } from "react";
 import { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -34,15 +35,11 @@ async function CarDetailContent({ params }: { params: Promise<{ id: string }> })
   const { id } = await params;
   const numericId = Number(id);
 
-  if (isNaN(numericId)) {
-    return <div>Invalid car ID</div>;
-  }
+  if (isNaN(numericId)) notFound();
 
   const car = await getById(numericId);
 
-  if (!car) {
-    return <div>Car not found</div>;
-  }
+  if (!car) notFound();
 
   const modelPath = await getModelByCarId(numericId);
   const colors = await getAllColors();

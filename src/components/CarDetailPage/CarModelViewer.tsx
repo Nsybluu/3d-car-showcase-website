@@ -364,7 +364,7 @@ export default function CarModelViewer({
           <Canvas
             key={`viewer-${canvasKey}`}
             onCreated={handleCanvasCreated}
-            frameloop="always"
+            frameloop="demand"
             dpr={[1, 1.5]}
             camera={{ position: [4.5, 1.8, 5], fov: 32 }}
             resize={{ debounce: 0 }}>

@@ -43,6 +43,7 @@ export async function getAll(filter?: {
     year: row.year as number,
     price: row.price as number,
     imageUrl: row.imageurl as string,
+    isTrending: row.istrending as boolean,
   }));
 }
 

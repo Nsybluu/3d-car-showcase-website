@@ -1,11 +1,11 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
 import Container from "@/src/components/Main/Container";
 import { MdOutlineArrowOutward, MdChevronLeft, MdChevronRight } from "react-icons/md";
 import Link from "next/link";
 import LazyImage from "@/src/components/ui/LazyImage";
 import { formatTHB } from "@/src/lib/format";
+import { useHorizontalScroll } from "@/src/hooks/useHorizontalScroll";
 import type { Car } from "@/src/types";
 
 interface Props {
@@ -13,38 +13,8 @@ interface Props {
 }
 
 export default function TrendingSection({ cars }: Props) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [showLeftFade, setShowLeftFade] = useState(false);
-  const [showRightFade, setShowRightFade] = useState(true);
-
-  const scroll = (direction: "left" | "right") => {
-    const container = scrollRef.current;
-    if (!container) return;
-
-    const scrollAmount = container.clientWidth * 0.8;
-
-    container.scrollBy({
-      left: direction === "left" ? -scrollAmount : scrollAmount,
-      behavior: "smooth",
-    });
-  };
-
-  useEffect(() => {
-    const container = scrollRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      const { scrollLeft, scrollWidth, clientWidth } = container;
-
-      setShowLeftFade(scrollLeft > 0);
-      setShowRightFade(scrollLeft + clientWidth < scrollWidth - 1);
-    };
-
-    handleScroll();
-    container.addEventListener("scroll", handleScroll);
-
-    return () => container.removeEventListener("scroll", handleScroll);
-  }, [cars]);
+  // ใช้ shared hook แทน scroll logic ที่ซ้ำซ้อน (เหมือน BrandSection / CategorySection)
+  const { scrollRef, showLeftFade, showRightFade, scroll } = useHorizontalScroll(cars);
 
   return (
     <section className="pt-20">

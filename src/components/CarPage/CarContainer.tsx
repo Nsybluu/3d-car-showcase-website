@@ -6,6 +6,7 @@ import { useState } from "react";
 import { MdOutlineArrowOutward } from "react-icons/md";
 import { LiaCarSideSolid } from "react-icons/lia";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
+import { Flame } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import LazyImage from "@/src/components/ui/LazyImage";
 import { formatTHB } from "@/src/lib/format";
@@ -22,12 +23,18 @@ function CarCard({ car }: { car: Car }) {
     >
       <Link href={`/car/${car.carId}`} className="h-[420px] block group">
         <div className="bg-gray-100 rounded-2xl border border-gray-200 hover:shadow-[0_10px_30px_rgba(0,0,0,0.10)] transition-all duration-300 overflow-hidden h-full flex flex-col">
-          <div className="h-48 overflow-hidden">
+          <div className="h-48 overflow-hidden relative">
             <LazyImage
               src={car.imageUrl}
               alt={car.carName}
               className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
             />
+            {/* 🔥 Trending Badge */}
+            {car.isTrending && (
+              <span className="absolute top-3 left-3 z-10 inline-flex items-center gap-1 bg-orange-500 text-white text-[11px] font-semibold px-2.5 py-1 rounded-full shadow-md">
+                <Flame size={12} /> Trending
+              </span>
+            )}
           </div>
 
           <div className="p-5 flex flex-col flex-1">
@@ -92,11 +99,19 @@ export default function CarContainer({
 
   const totalPages = Math.ceil(cars.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedCars = cars.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, cars.length);
+  const paginatedCars = cars.slice(startIndex, endIndex);
 
   return (
     <Container>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-5 min-h-[500px]">
+      {/* 📊 Car count */}
+      {cars.length > 0 && (
+        <p className="text-sm text-gray-400 pt-5 pb-1">
+          Showing {startIndex + 1}–{endIndex} of {cars.length} cars
+        </p>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-3 min-h-[500px]">
         <AnimatePresence>
           {paginatedCars.length === 0 ? (
             <motion.div
