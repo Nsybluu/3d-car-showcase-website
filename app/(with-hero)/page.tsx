@@ -11,31 +11,12 @@ export const metadata = {
 };
 
 export default async function Home() {
+  let brands, categories, trending;
+
   try {
-    const brands = await getAllBrands();
-    const categories = await getAllCategories();
-    const trending = await getTrending();
-
-    return (
-      <section className="py-20">
-        <Container>
-          <CategorySection
-            title="Browse By Type"
-            mode="display"
-            categories={categories}
-          />
-
-          <BrandSection
-            title="Explore Our Premium Brands"
-            className="pt-20"
-            mode="display"
-            brands={brands}
-          />
-
-          <TrendingSection cars={trending} />
-        </Container>
-      </section>
-    );
+    brands = await getAllBrands();
+    categories = await getAllCategories();
+    trending = await getTrending();
   } catch (error) {
     console.error("Home build error:", error);
 
@@ -51,4 +32,25 @@ export default async function Home() {
       </section>
     );
   }
+
+  return (
+    <section className="py-20">
+      <Container>
+        <CategorySection
+          title="Browse By Type"
+          mode="display"
+          categories={categories}
+        />
+
+        <BrandSection
+          title="Explore Our Premium Brands"
+          className="pt-20"
+          mode="display"
+          brands={brands}
+        />
+
+        <TrendingSection cars={trending} />
+      </Container>
+    </section>
+  );
 }

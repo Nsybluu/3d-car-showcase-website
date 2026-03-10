@@ -1,5 +1,3 @@
-import { p } from "framer-motion/client";
-
 export class Car {
   constructor(
     public carId: number,

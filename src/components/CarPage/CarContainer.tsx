@@ -2,7 +2,7 @@
 
 import Container from "../Main/Container";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { MdOutlineArrowOutward } from "react-icons/md";
 import { LiaCarSideSolid } from "react-icons/lia";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
@@ -78,15 +78,17 @@ export default function CarContainer({
   filterKey: string;
 }) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [appliedFilterKey, setAppliedFilterKey] = useState(filterKey);
+
+  // Derived state: reset page when filterKey changes (no useEffect needed)
+  if (appliedFilterKey !== filterKey) {
+    setCurrentPage(1);
+    setAppliedFilterKey(filterKey);
+  }
 
   const totalPages = Math.ceil(cars.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedCars = cars.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-
-  // Reset page when filter changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filterKey]);
 
   return (
     <Container>

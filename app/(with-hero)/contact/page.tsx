@@ -1,6 +1,4 @@
-import React from "react";
 import ContactContainer from "@/src/components/ContactPage/ContactContainer";
-import Container from "@/src/components/Main/Container";
 
 export const metadata = {
   title: "Contact | LoveCodeLoveCar",

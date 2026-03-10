@@ -85,13 +85,14 @@ function isBodyMaterial(matName: string, path: string, forceHeuristic = false): 
 function getMeshBounds(object: THREE.Object3D): THREE.Box3 {
   const box = new THREE.Box3();
   object.updateMatrixWorld(true);
-  object.traverse((child: any) => {
-    if (child.isMesh && child.geometry && child.geometry.attributes.position) {
-      const geom = child.geometry;
+  object.traverse((child: THREE.Object3D) => {
+    const mesh = child as THREE.Mesh;
+    if (mesh.isMesh && mesh.geometry && mesh.geometry.attributes.position) {
+      const geom = mesh.geometry;
       geom.computeBoundingBox();
       if (geom.boundingBox) {
         const b = geom.boundingBox.clone();
-        b.applyMatrix4(child.matrixWorld);
+        b.applyMatrix4(mesh.matrixWorld);
         box.union(b);
       }
     }
@@ -164,44 +165,47 @@ function Model({ path, color }: { path: string; color: string }) {
   React.useEffect(() => {
     if (!model) return;
 
-    const applyColor = (child: any) => {
-      const mat = child.material;
-      child.material = mat.clone();
-      child.material.color = new THREE.Color(color);
-      child.material.map = null;
-      child.material.emissiveMap = null;
-      child.material.aoMap = null;
-      if ('metalness' in child.material) child.material.metalness = 0.4;
-      if ('roughness' in child.material) child.material.roughness = 0.25;
-      if ('clearcoat' in child.material) child.material.clearcoat = 0.8;
-      if ('clearcoatRoughness' in child.material) child.material.clearcoatRoughness = 0.1;
-      child.material.needsUpdate = true;
+    const applyColor = (mesh: THREE.Mesh) => {
+      const mat = mesh.material as THREE.MeshStandardMaterial;
+      mesh.material = mat.clone();
+      const newMat = mesh.material as THREE.MeshStandardMaterial;
+      newMat.color = new THREE.Color(color);
+      newMat.map = null;
+      newMat.emissiveMap = null;
+      newMat.aoMap = null;
+      if ('metalness' in newMat) newMat.metalness = 0.4;
+      if ('roughness' in newMat) newMat.roughness = 0.25;
+      if ('clearcoat' in newMat) (newMat as THREE.MeshPhysicalMaterial).clearcoat = 0.8;
+      if ('clearcoatRoughness' in newMat) (newMat as THREE.MeshPhysicalMaterial).clearcoatRoughness = 0.1;
+      newMat.needsUpdate = true;
     };
 
     let changed = 0;
-    model.traverse((child: any) => {
-      if (!child.isMesh) return;
-      const mat = child.material;
+    model.traverse((child: THREE.Object3D) => {
+      const mesh = child as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const mat = mesh.material as THREE.Material;
       if (!mat || !mat.name) return;
       if (isBodyMaterial(mat.name, path)) {
         const meshKey = getModelKey(path);
         const excludes = meshKey ? MODEL_MESH_EXCLUDES[meshKey] : null;
         if (excludes) {
-          const nodeName = (child.name || '').toLowerCase();
+          const nodeName = (mesh.name || '').toLowerCase();
           if (excludes.some((ex) => nodeName.includes(ex))) return;
         }
-        applyColor(child);
+        applyColor(mesh);
         changed++;
       }
     });
 
     if (changed === 0) {
-      model.traverse((child: any) => {
-        if (!child.isMesh) return;
-        const mat = child.material;
+      model.traverse((child: THREE.Object3D) => {
+        const mesh = child as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        const mat = mesh.material as THREE.Material;
         if (!mat || !mat.name) return;
         if (isBodyMaterial(mat.name, path, true)) {
-          applyColor(child);
+          applyColor(mesh);
           changed++;
         }
       });
@@ -309,7 +313,7 @@ export default function CarModelViewer({
   // increment key to force fresh Canvas. Does NOT fire during
   // fullscreen toggle because the Canvas stays mounted.
   const [canvasKey, setCanvasKey] = useState(0);
-  const handleCanvasCreated = useCallback((state: any) => {
+  const handleCanvasCreated = useCallback((state: { gl: THREE.WebGLRenderer }) => {
     const canvas = state.gl.domElement;
     canvas.addEventListener('webglcontextlost', () => {
       setCanvasKey(prev => prev + 1);

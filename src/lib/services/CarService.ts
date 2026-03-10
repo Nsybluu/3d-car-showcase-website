@@ -7,49 +7,43 @@ export async function getTrending() {
   "use cache";
   cacheLife("frequentData");
 
-  const [rows]: any[] = await db.query(
-    "SELECT * FROM car WHERE isTrending = 1 ORDER BY displayOrder ASC",
-  );
+  const rows = await db`
+    SELECT * FROM car WHERE istrending = true ORDER BY displayorder ASC
+  `;
 
-  return rows.map((row: any) => ({
-    carId: row.carId,
-    carName: row.carName,
-    year: row.year,
-    price: row.price,
-    imageUrl: row.imageUrl,
+  return rows.map((row) => ({
+    carId: row.carid as number,
+    carName: row.carname as string,
+    year: row.year as number,
+    price: row.price as number,
+    imageUrl: row.imageurl as string,
   }));
 }
 
 // ดึงรถทั้งหมด โดยสามารถ filter ด้วย brandId และ categoryId ได้
-export async function getAll(filter?: { brandId?: number; categoryId?: number }) {
+export async function getAll(filter?: {
+  brandId?: number;
+  categoryId?: number;
+}) {
   "use cache";
   cacheLife("frequentData");
 
-  let sql = "SELECT * FROM car WHERE 1=1";
-  const params: any[] = [];
+  const rows = await db`
+    SELECT * FROM car
+    WHERE true
+    ${filter?.brandId !== undefined ? db`AND brandid = ${filter.brandId}` : db``}
+    ${filter?.categoryId !== undefined ? db`AND categoryid = ${filter.categoryId}` : db``}
+    ORDER BY year DESC
+  `;
 
-  if (filter?.brandId !== undefined) {
-    sql += " AND brandId = ?";
-    params.push(filter.brandId);
-  }
-
-  if (filter?.categoryId !== undefined) {
-    sql += " AND categoryId = ?";
-    params.push(filter.categoryId);
-  }
-
-  sql += " ORDER BY year DESC";
-
-  const [rows]: any[] = await db.query(sql, params);
-
-  return rows.map((row: any) => ({
-    carId: row.carId,
-    brandId: row.brandId,
-    categoryId: row.categoryId,
-    carName: row.carName,
-    year: row.year,
-    price: row.price,
-    imageUrl: row.imageUrl,
+  return rows.map((row) => ({
+    carId: row.carid as number,
+    brandId: row.brandid as number,
+    categoryId: row.categoryid as number,
+    carName: row.carname as string,
+    year: row.year as number,
+    price: row.price as number,
+    imageUrl: row.imageurl as string,
   }));
 }
 
@@ -60,13 +54,22 @@ export async function getById(id: number) {
 
   if (!id || isNaN(id)) return null;
 
-  const [rows]: any[] = await db.query("SELECT * FROM car WHERE carId = ?", [
-    id,
-  ]);
+  const rows = await db`
+    SELECT * FROM car WHERE carid = ${id}
+  `;
 
   if (rows.length === 0) return null;
 
-  return rows[0] as Car;
+  const row = rows[0];
+  return {
+    carId: row.carid,
+    carName: row.carname,
+    year: row.year,
+    price: row.price,
+    imageUrl: row.imageurl,
+    brandId: row.brandid,
+    categoryId: row.categoryid,
+  } as Car;
 }
 
 // ดึง modelPath ของรถจาก carId
@@ -74,16 +77,13 @@ export async function getModelByCarId(carId: number): Promise<string> {
   "use cache";
   cacheLife("frequentData");
 
-  const [rows]: any[] = await db.query(
-    `
-    SELECT modelUrl 
-    FROM car_model 
-    WHERE carId = ? 
-    ORDER BY isDefault DESC 
+  const rows = await db`
+    SELECT modelurl
+    FROM car_model
+    WHERE carid = ${carId}
+    ORDER BY isdefault DESC
     LIMIT 1
-    `,
-    [carId],
-  );
+  `;
 
   // 🚨 ถ้าไม่มี model ใน DB
   if (!rows || rows.length === 0) {
@@ -91,11 +91,11 @@ export async function getModelByCarId(carId: number): Promise<string> {
   }
 
   // 🚨 ถ้า modelUrl ว่าง
-  if (!rows[0].modelUrl) {
+  if (!rows[0].modelurl) {
     return "https://pub-6c082fd2916247f384ce18d4075bfb85.r2.dev/defaultCar.glb";
   }
 
-  return rows[0].modelUrl;
+  return rows[0].modelurl as string;
 }
 
 // ดึงสีรถทั้งหมดจาก DB
@@ -103,60 +103,59 @@ export async function getAllColors() {
   "use cache";
   cacheLife("staticData");
 
-  const [rows]: any[] = await db.query(
-    "SELECT * FROM color ORDER BY displayOrder ASC",
-  );
+  const rows = await db`
+    SELECT * FROM color ORDER BY displayorder ASC
+  `;
 
-  return rows.map((row: any) => ({
-    id: row.colorId,
-    name: row.colorName,
-    code: row.colorCode,
-    image: row.imageUrl,
+  return rows.map((row) => ({
+    id: row.colorid as number,
+    name: row.colorname as string,
+    code: row.colorcode as string,
+    image: row.imageurl as string,
   }));
 }
 
 // ดึงสเปครถตาม carId
-export async function getSpecsByCarId(carId: number): Promise<CarSpecSection[]> {
+export async function getSpecsByCarId(
+  carId: number,
+): Promise<CarSpecSection[]> {
   "use cache";
   cacheLife("frequentData");
 
-  const [rows]: any[] = await db.query(
-    `
-    SELECT 
-      s.sectionId,
-      s.sectionTitle,
-      s.displayOrder AS sectionOrder,
-      i.itemId,
+  const rows = await db`
+    SELECT
+      s.sectionid,
+      s.sectiontitle,
+      s.displayorder AS sectionorder,
+      i.itemid,
       i.label,
       i.value,
-      i.displayOrder AS itemOrder
+      i.displayorder AS itemorder
     FROM car_spec_section s
     LEFT JOIN car_spec_item i
-      ON s.sectionId = i.sectionId
-    WHERE s.carId = ?
-    ORDER BY s.displayOrder ASC, i.displayOrder ASC
-    `,
-    [carId]
-  );
+      ON s.sectionid = i.sectionid
+    WHERE s.carid = ${carId}
+    ORDER BY s.displayorder ASC, i.displayorder ASC
+  `;
 
   if (!rows.length) return [];
 
-  const sectionsMap: any = {};
+  const sectionsMap: Record<number, CarSpecSection> = {};
 
   for (const row of rows) {
-    if (!sectionsMap[row.sectionId]) {
-      sectionsMap[row.sectionId] = {
-        sectionId: row.sectionId,
-        title: row.sectionTitle,
+    if (!sectionsMap[row.sectionid as number]) {
+      sectionsMap[row.sectionid as number] = {
+        sectionId: row.sectionid as number,
+        title: row.sectiontitle as string,
         items: [],
       };
     }
 
-    if (row.itemId) {
-      sectionsMap[row.sectionId].items.push({
-        itemId: row.itemId,
-        label: row.label,
-        value: row.value,
+    if (row.itemid) {
+      sectionsMap[row.sectionid as number].items.push({
+        itemId: row.itemid as number,
+        label: row.label as string,
+        value: row.value as string,
       });
     }
   }

@@ -1,14 +1,5 @@
-import mysql from "mysql2/promise";
+import postgres from "postgres";
 
-export const db = mysql.createPool({
-  host: process.env.DATABASE_HOST,
-  port: process.env.DATABASE_PORT
-  ? Number(process.env.DATABASE_PORT)
-  : 3306,
-  user: process.env.DATABASE_USER,
-  password: process.env.DATABASE_PASSWORD,
-  database: process.env.DATABASE_NAME,
-  ssl: {
-    rejectUnauthorized: false,              // ⭐ สำคัญสำหรับ Railway
-  },
+export const db = postgres(process.env.DATABASE_URL!, {
+  ssl: "require",
 });

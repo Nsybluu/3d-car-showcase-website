@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 
 interface LazyImageProps {
   src: string;
@@ -20,20 +20,18 @@ export default function LazyImage({
   loading = "lazy",
 }: LazyImageProps) {
   const [loaded, setLoaded] = useState(false);
-  const imgRef = useRef<HTMLImageElement>(null);
+  const [prevSrc, setPrevSrc] = useState(src);
 
-  useEffect(() => {
-    // Handle cached images that fire 'complete' before onLoad
-    if (imgRef.current?.complete) {
-      setLoaded(true);
-    }
-  }, [src]);
+  // Derived state: reset loaded when src changes (no useEffect needed)
+  if (prevSrc !== src) {
+    setPrevSrc(src);
+    setLoaded(false);
+  }
 
   return (
     <div className="relative w-full h-full">
       {!loaded && <div className="absolute inset-0 skeleton" />}
       <img
-        ref={imgRef}
         src={src}
         alt={alt}
         loading={loading}
