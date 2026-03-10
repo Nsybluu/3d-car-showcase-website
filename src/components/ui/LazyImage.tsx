@@ -1,23 +1,28 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 interface LazyImageProps {
   src: string;
   alt: string;
   className?: string;
   loading?: "lazy" | "eager";
+  priority?: boolean;
+  sizes?: string;
 }
 
 /**
  * Shared lazy-loading image component with skeleton placeholder.
- * แทนที่ CarImage ที่ซ้ำกัน 3 ที่
+ * Uses next/image for automatic WebP/AVIF, responsive srcset, and optimization.
  */
 export default function LazyImage({
   src,
   alt,
   className = "w-full h-full object-cover",
   loading = "lazy",
+  priority = false,
+  sizes = "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
 }: LazyImageProps) {
   const [loaded, setLoaded] = useState(false);
   const [prevSrc, setPrevSrc] = useState(src);
@@ -31,11 +36,13 @@ export default function LazyImage({
   return (
     <div className="relative w-full h-full">
       {!loaded && <div className="absolute inset-0 skeleton" />}
-      <img
+      <Image
         src={src}
         alt={alt}
-        loading={loading}
-        decoding="async"
+        fill
+        sizes={sizes}
+        loading={priority ? undefined : loading}
+        priority={priority}
         className={`transition duration-500 ${loaded ? "opacity-100" : "opacity-0"} ${className}`}
         onLoad={() => setLoaded(true)}
       />

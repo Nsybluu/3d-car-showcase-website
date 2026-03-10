@@ -21,12 +21,10 @@ export default async function Home() {
     console.error("Home build error:", error);
 
     return (
-      <section className="py-20">
+      <section className="py-5">
         <Container>
           <div className="text-center py-20">
-            <h2 className="text-2xl font-semibold">
-              Temporary loading issue
-            </h2>
+            <h2 className="text-2xl font-semibold">Temporary loading issue</h2>
           </div>
         </Container>
       </section>
@@ -34,7 +32,7 @@ export default async function Home() {
   }
 
   return (
-    <section className="py-20">
+    <section className="py-5">
       <Container>
         <CategorySection
           title="Browse By Type"
@@ -44,7 +42,7 @@ export default async function Home() {
 
         <BrandSection
           title="Explore Our Premium Brands"
-          className="pt-20"
+          className="pt-5"
           mode="display"
           brands={brands}
         />

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 import Container from "@/src/components/Main/Container";
 import type { Brand } from "@/src/types";
@@ -24,7 +25,8 @@ export default function BrandSection({
   onSelect,
   selectedId,
 }: Props) {
-  const { scrollRef, showLeftFade, showRightFade, scroll } = useHorizontalScroll(brands);
+  const { scrollRef, showLeftFade, showRightFade, scroll } =
+    useHorizontalScroll(brands);
 
   const handleClick = (id: number) => {
     if (mode !== "filter") return;
@@ -66,11 +68,13 @@ export default function BrandSection({
                       ${mode === "filter" ? "cursor-pointer" : "cursor-default"}
                     `}
                   >
-                    <div className="h-16 w-24 flex items-center justify-center mb-3">
-                      <img
+                    <div className="relative h-16 w-24 flex items-center justify-center mb-3">
+                      <Image
                         src={brand.logoUrl}
                         alt={brand.brandName}
-                        className="max-h-10 max-w-full object-contain"
+                        fill
+                        sizes="96px"
+                        className="object-contain"
                       />
                     </div>
                     <span className="text-sm font-medium">

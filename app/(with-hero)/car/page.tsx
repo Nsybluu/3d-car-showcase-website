@@ -10,13 +10,9 @@ export default async function CarPage() {
   const cars = await getAll(); // โหลดทั้งหมด
 
   return (
-    <section className="py-20">
+    <section>
       <Container>
-        <CarListClient
-          brands={brands}
-          categories={categories}
-          cars={cars}
-        />
+        <CarListClient brands={brands} categories={categories} cars={cars} />
       </Container>
     </section>
   );

@@ -23,7 +23,11 @@ function CarCard({ car }: { car: Car }) {
       <Link href={`/car/${car.carId}`} className="h-[420px] block group">
         <div className="bg-gray-100 rounded-2xl border border-gray-200 hover:shadow-[0_10px_30px_rgba(0,0,0,0.10)] transition-all duration-300 overflow-hidden h-full flex flex-col">
           <div className="h-48 overflow-hidden">
-            <LazyImage src={car.imageUrl} alt={car.carName} className="w-full h-full object-cover transition duration-500 group-hover:scale-105" />
+            <LazyImage
+              src={car.imageUrl}
+              alt={car.carName}
+              className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
+            />
           </div>
 
           <div className="p-5 flex flex-col flex-1">
@@ -92,7 +96,7 @@ export default function CarContainer({
 
   return (
     <Container>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-20 min-h-[500px]">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-5 min-h-[500px]">
         <AnimatePresence>
           {paginatedCars.length === 0 ? (
             <motion.div
@@ -114,9 +118,7 @@ export default function CarContainer({
               </Link>
             </motion.div>
           ) : (
-            paginatedCars.map((car) => (
-              <CarCard key={car.carId} car={car} />
-            ))
+            paginatedCars.map((car) => <CarCard key={car.carId} car={car} />)
           )}
         </AnimatePresence>
       </div>

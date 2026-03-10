@@ -44,7 +44,7 @@ export default function CarListClient({
       <BrandSection
         title="Choose Your Favorite Brand"
         mode="filter"
-        className="pt-20"
+        className="pt-5"
         brands={brands}
         selectedId={selectedBrand}
         onSelect={(id: number) =>

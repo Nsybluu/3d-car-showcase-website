@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 import Container from "@/src/components/Main/Container";
 import type { Category } from "@/src/types";
@@ -22,7 +23,8 @@ export default function CategorySection({
   onSelect,
   selectedId,
 }: Props) {
-  const { scrollRef, showLeftFade, showRightFade, scroll } = useHorizontalScroll(categories);
+  const { scrollRef, showLeftFade, showRightFade, scroll } =
+    useHorizontalScroll(categories);
 
   const handleClick = (id: number) => {
     if (mode !== "filter") return;
@@ -62,11 +64,13 @@ export default function CategorySection({
                       ${mode === "filter" ? "cursor-pointer" : "cursor-default"}
                     `}
                   >
-                    <div className="h-16 w-24 flex items-center justify-center mb-3">
-                      <img
+                    <div className="relative h-16 w-24 flex items-center justify-center mb-3">
+                      <Image
                         src={cat.logoUrl}
                         alt={cat.categoryName}
-                        className="max-h-10 max-w-full object-contain"
+                        fill
+                        sizes="96px"
+                        className="object-contain"
                       />
                     </div>
                     <span className="text-sm font-medium">
